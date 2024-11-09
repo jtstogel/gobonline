@@ -20,7 +20,7 @@ jobs:
       run: |
         sudo apt-get update -qq
         curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 18
-        sudo apt-get install clang-tools-18 clang-format-18
+        sudo apt-get install clang-tidy-18 clang-format-18
 
     - uses: actions/checkout@v2
       with:
@@ -51,5 +51,5 @@ jobs:
         bazel run :refresh_compile_commands
         CC_SOURCES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
-        xargs --null clang-check-18 < "$CC_SOURCES"
+        xargs --null clang-tidy-18 < "$CC_SOURCES"
         xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"

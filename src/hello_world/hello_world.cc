@@ -7,9 +7,5 @@ int main(int argc, char** argv) {
 
   std::cout << "Hello world!" << std::endl;
 
-  if (random()) {
-    return 1;
-  } else {  // Shouldn't pass clang-tidy.
-    return 0;
-  }
+  return 0;
 }
