@@ -1,4 +1,4 @@
-name: Build and test
+name: Presubmit
 
 on:
   push:
@@ -51,5 +51,5 @@ jobs:
         bazel run :refresh_compile_commands
         CC_SOURCES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
-        xargs --null clang-check-18 < "$FILES"
-        xargs --null clang-format-18 --dry-run -Werror -- < "$FILES"
+        xargs --null clang-check-18 < "$CC_SOURCES"
+        xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"
