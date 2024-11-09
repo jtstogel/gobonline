@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 
-
 TEST(HelloWorldTest, Example) {
-  ASSERT_EQ(1, 1);
+  // Shouldn't pass clang-format.
+    // i'm not properly indented!
+  ASSERT_EQ(  1  
+  , 1  );
 }

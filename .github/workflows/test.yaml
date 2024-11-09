@@ -1,15 +1,10 @@
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License
-
-name: clang
+name: clang-checks
 
 on:
   push:
     branches:
     - main
+    # For easier development without having to push to main.
     - workspace-configuration
 
   pull_request:
@@ -17,13 +12,9 @@ on:
 jobs:
   Linux:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler:
-          - clang++
 
     name: "Build/Test"
+
     steps:
     - name: Prepare
       run: |
