@@ -10,6 +10,7 @@ on:
   push:
     branches:
     - main
+    - workspace-configuration
 
   pull_request:
 
