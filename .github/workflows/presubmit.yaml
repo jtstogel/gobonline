@@ -1,4 +1,4 @@
-name: clang-checks
+name: Build and test
 
 on:
   push:
@@ -13,13 +13,14 @@ jobs:
   Linux:
     runs-on: ubuntu-latest
 
-    name: "Build/Test"
+    name: "Build, test, and lint"
 
     steps:
     - name: Prepare
       run: |
         sudo apt-get update -qq
         curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 18
+        sudo apt-get install clang-tools-18 clang-format-18
 
     - uses: actions/checkout@v2
       with:
@@ -38,5 +39,17 @@ jobs:
         key: bazelcache_${{ steps.cache_timestamp.outputs.time }}
         restore-keys: bazelcache
 
-    - name: Tests
+    - name: Build
+      run: bazel build //...
+
+    - name: Test
       run: bazel test --test_output=errors //...
+
+    - name: C++ Format & Lint
+      run: |
+        bazel build //...
+        bazel run :refresh_compile_commands
+        CC_SOURCES=$(mktemp)
+        find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
+        xargs --null clang-check-18 < "$FILES"
+        xargs --null clang-format-18 --dry-run -Werror -- < "$FILES"
