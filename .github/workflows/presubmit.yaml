@@ -1,0 +1,53 @@
+name: Presubmit
+
+on:
+  push:
+    branches:
+    - main
+
+  pull_request:
+
+jobs:
+  Linux:
+    runs-on: ubuntu-24.04
+
+    name: "Build, Test, and Lint"
+
+    steps:
+    - name: Prepare
+      run: |
+        sudo apt-get update -qq
+        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 18
+        sudo apt-get install clang-tidy-18 clang-format-18
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Create Cache Timestamp
+      id: cache_timestamp
+      uses: nanzm/get-time-action@v1.1
+      with:
+        format: 'YYYY-MM-DD-HH-mm-ss'
+
+    - name: Mount Bazel Cache
+      uses: actions/cache@v2
+      with:
+        path: "/home/runner/.cache/bazel"
+        key: bazelcache_${{ steps.cache_timestamp.outputs.time }}
+        restore-keys: bazelcache
+
+    - name: Build
+      run: bazel build //...
+
+    - name: Test
+      run: bazel test --test_output=errors //...
+
+    - name: C++ Lint
+      run: |
+        bazel build //...
+        bazel run :refresh_compile_commands
+        CC_SOURCES=$(mktemp)
+        find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
+        xargs --null clang-tidy-18 < "$CC_SOURCES"
+        xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"
