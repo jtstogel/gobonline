@@ -26,15 +26,14 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Find files
+    - name: Formatting
       run: |
         FILES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$FILES"
-
-    - name: Formatting
-      run: |
         xargs --null clang-format-18 --dry-run -Werror -- < "$FILES"
 
     - name: Clang Tidy
       run: |
+        FILES=$(mktemp)
+        find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$FILES"
         xargs --null clang-check-18 < "$FILES"
