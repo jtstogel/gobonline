@@ -4,16 +4,14 @@ on:
   push:
     branches:
     - main
-    # For easier development without having to push to main.
-    - workspace-configuration
 
   pull_request:
 
 jobs:
   Linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
-    name: "Build, test, and lint"
+    name: "Build, Test, and Lint"
 
     steps:
     - name: Prepare
@@ -32,7 +30,7 @@ jobs:
       with:
         format: 'YYYY-MM-DD-HH-mm-ss'
 
-    - name: Mount bazel cache
+    - name: Mount Bazel Cache
       uses: actions/cache@v2
       with:
         path: "/home/runner/.cache/bazel"
@@ -45,7 +43,7 @@ jobs:
     - name: Test
       run: bazel test --test_output=errors //...
 
-    - name: C++ Format & Lint
+    - name: C++ Lint
       run: |
         bazel build //...
         bazel run :refresh_compile_commands
