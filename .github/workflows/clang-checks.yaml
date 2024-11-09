@@ -13,7 +13,7 @@ jobs:
   Linux:
     runs-on: ubuntu-latest
 
-    name: "Clang checks"
+    name: "Clang Checks"
 
     steps:
     - name: Prepare
@@ -26,14 +26,14 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Formatting
-      run: |
-        FILES=$(mktemp)
-        find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$FILES"
-        xargs --null clang-format-18 --dry-run -Werror -- < "$FILES"
-
     - name: Clang Tidy
       run: |
         FILES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$FILES"
         xargs --null clang-check-18 < "$FILES"
+
+    - name: Clang Format
+      run: |
+        FILES=$(mktemp)
+        find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$FILES"
+        xargs --null clang-format-18 --dry-run -Werror -- < "$FILES"
