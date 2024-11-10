@@ -1,0 +1,82 @@
+test_images {
+    file_name: "small_overhead_with_stones.jpeg"
+    goban_rectangle {
+        top_left { row: 135, column: 167 }
+        top_right { row: 138, column: 456 }
+        bottom_right { row: 402, column: 455 }
+        bottom_left { row: 396, column: 160 }
+    }
+    stones: [
+        { color: BLACK, row: 3, column: 3 },
+        { color: WHITE, row: 15, column: 15 },
+        { color: BLACK, row: 3, column: 15 },
+        { color: WHITE, row: 15, column: 3 },
+        { color: WHITE, row: 2, column: 13 },
+        { color: BLACK, row: 5, column: 16 },
+        { color: WHITE, row: 2, column: 5 },
+        { color: BLACK, row: 2, column: 4 },
+        { color: WHITE, row: 3, column: 5 },
+    ]
+}
+
+test_images {
+    file_name: "large_sheer_glare_with_stones.jpeg"
+    goban_rectangle {
+        top_left { row: 372, column: 601 }
+        top_right { row: 558, column: 1280 }
+        bottom_right { row: 1183, column: 1124 }
+        bottom_left { row: 890, column: 296 }
+    }
+    stones: [
+        { color: BLACK, row: 3, column: 3 },
+        { color: WHITE, row: 15, column: 15 },
+        { color: BLACK, row: 3, column: 15 },
+        { color: WHITE, row: 15, column: 3 },
+        { color: WHITE, row: 2, column: 13 },
+        { color: BLACK, row: 5, column: 16 },
+        { color: WHITE, row: 2, column: 5 },
+        { color: BLACK, row: 2, column: 4 },
+        { color: WHITE, row: 3, column: 5 },
+    ]
+}
+
+test_images {
+    file_name: "small_dim_with_stones.jpeg"
+    goban_rectangle {
+        top_left { row: 171, column: 163 }
+        top_right { row: 159, column: 434 }
+        bottom_right { row: 381, column: 491 }
+        bottom_left { row: 401, column: 147 }
+    }
+    stones: [
+        { color: BLACK, row: 3, column: 3 },
+        { color: WHITE, row: 15, column: 15 },
+        { color: BLACK, row: 3, column: 15 },
+        { color: WHITE, row: 15, column: 3 },
+        { color: WHITE, row: 2, column: 13 },
+        { color: BLACK, row: 5, column: 16 },
+        { color: WHITE, row: 2, column: 5 },
+        { color: BLACK, row: 2, column: 4 },
+        { color: WHITE, row: 3, column: 5 },
+    ]
+}
+
+test_images {
+    file_name: "sheer_blurry_empty.jpeg"
+    goban_rectangle {
+        top_left { row: 364, column: 279 }
+        top_right { row: 250, column: 467 }
+        bottom_right { row: 373, column: 607 }
+        bottom_left { row: 514, column: 400 }
+    }
+}
+
+test_images {
+    file_name: "empty_rotated_dim_obstructed_board.jpeg"
+    goban_rectangle {
+        top_left { row: 607, column: 569 }
+        top_right { row: 411, column: 326 }
+        bottom_right { row: 94, column: 388 }
+        bottom_left { row: 176, column: 712 }
+    }
+}

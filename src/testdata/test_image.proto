@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package testdata;
+
+message Point {
+    int32 row = 1;
+    int32 column = 2;
+}
+
+message Rectangle {
+    Point top_left = 1;
+    Point top_right = 2;
+    Point bottom_right = 3;
+    Point bottom_left = 4;
+}
+
+message Stone {
+    enum Color {
+        COLOR_UNSPECIFIED = 0;
+        WHITE = 1;
+        BLACK = 2;
+    }
+
+    Color color = 1;
+    
+    // The column of the stone (from left to right).
+    int32 column = 2;
+
+    // The row of the stone (top to bottom).
+    int32 row = 3;
+}
+
+message GobanImage {
+    string file_name = 1;
+
+    // A rectangle outlining the lines of the goban.
+    Rectangle goban_rectangle = 2;
+
+    // All stones on the board in any order.
+    repeated Stone stones = 3;
+}
+
+// Root message for `test_images.textproto``.
+message TestImages {
+    repeated GobanImage test_images = 1;
+}
