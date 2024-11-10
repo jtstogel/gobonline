@@ -36,8 +36,29 @@ message GobanImage {
     // A rectangle outlining the lines of the goban.
     Rectangle goban_rectangle = 2;
 
-    // All stones on the board in any order.
-    repeated Stone stones = 3;
+    // A string representation of stones on the board.
+    //
+    // Each entry represents a row of the goban.
+    // Permitted characters are ".", "B" and "W".
+    // Each non-whitespace character represents an intersection.
+    // Whitespace is ignored.
+    //
+    // This format is convenient for test cases,
+    // since it's very easy to grok an ascii image.
+    //
+    // A 9x9 example would look like:
+    // [
+    //   ". . . . . . . . .",
+    //   ". . . . . . . . .",
+    //   ". . . B W . . . .",
+    //   ". . B . W . . . .",
+    //   ". . . . . . . . .",
+    //   ". . . . . . . . .",
+    //   ". . . . . . . . .",
+    //   ". . . . . . . . .",
+    //   ". . . . . . . . .",
+    // ]
+    repeated string strigified_stones = 3;
 }
 
 // Root message for `test_images.textproto``.

@@ -6,16 +6,26 @@ test_images {
         bottom_right { row: 402, column: 455 }
         bottom_left { row: 396, column: 160 }
     }
-    stones: [
-        { color: BLACK, row: 3, column: 3 },
-        { color: WHITE, row: 15, column: 15 },
-        { color: BLACK, row: 3, column: 15 },
-        { color: WHITE, row: 15, column: 3 },
-        { color: WHITE, row: 2, column: 13 },
-        { color: BLACK, row: 5, column: 16 },
-        { color: WHITE, row: 2, column: 5 },
-        { color: BLACK, row: 2, column: 4 },
-        { color: WHITE, row: 3, column: 5 },
+    strigified_stones: [
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . B W . . . . . . . . W . . . . .",
+        ". . B . W . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . B . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . W . . . . . . . . . . . W . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
     ]
 }
 
@@ -27,16 +37,26 @@ test_images {
         bottom_right { row: 1183, column: 1124 }
         bottom_left { row: 890, column: 296 }
     }
-    stones: [
-        { color: BLACK, row: 3, column: 3 },
-        { color: WHITE, row: 15, column: 15 },
-        { color: BLACK, row: 3, column: 15 },
-        { color: WHITE, row: 15, column: 3 },
-        { color: WHITE, row: 2, column: 13 },
-        { color: BLACK, row: 5, column: 16 },
-        { color: WHITE, row: 2, column: 5 },
-        { color: BLACK, row: 2, column: 4 },
-        { color: WHITE, row: 3, column: 5 },
+    strigified_stones: [
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . B W . . . . . . . . W . . . . .",
+        ". . B . W . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . B . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . W . . . . . . . . . . . W . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
     ]
 }
 
@@ -48,16 +68,26 @@ test_images {
         bottom_right { row: 381, column: 491 }
         bottom_left { row: 401, column: 147 }
     }
-    stones: [
-        { color: BLACK, row: 3, column: 3 },
-        { color: WHITE, row: 15, column: 15 },
-        { color: BLACK, row: 3, column: 15 },
-        { color: WHITE, row: 15, column: 3 },
-        { color: WHITE, row: 2, column: 13 },
-        { color: BLACK, row: 5, column: 16 },
-        { color: WHITE, row: 2, column: 5 },
-        { color: BLACK, row: 2, column: 4 },
-        { color: WHITE, row: 3, column: 5 },
+    strigified_stones: [
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . B W . . . . . . . . W . . . . .",
+        ". . B . W . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . B . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . W . . . . . . . . . . . W . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
     ]
 }
 
