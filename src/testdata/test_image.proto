@@ -14,22 +14,6 @@ message Rectangle {
     Point bottom_left = 4;
 }
 
-message Stone {
-    enum Color {
-        COLOR_UNSPECIFIED = 0;
-        WHITE = 1;
-        BLACK = 2;
-    }
-
-    Color color = 1;
-    
-    // The column of the stone (from left to right).
-    int32 column = 2;
-
-    // The row of the stone (top to bottom).
-    int32 row = 3;
-}
-
 message GobanImage {
     string file_name = 1;
 
