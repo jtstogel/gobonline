@@ -24,7 +24,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Bazel Cache
+    - name: Mount Bazel Cache
       uses: actions/cache@v4
       with:
         key: ${{ runner.os }}-bazelcache
@@ -43,9 +43,3 @@ jobs:
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
         xargs --null clang-tidy-18 < "$CC_SOURCES"
         xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"
-
-    - name: Save Bazel Cache
-      uses: actions/cache/save@v4
-      with:
-        key: ${{ runner.os }}-bazelcache
-        path: "/home/runner/.cache/bazel"
