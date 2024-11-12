@@ -5,6 +5,7 @@ cc_binary(
 
 cc_test(
     name = "hello_world_test",
+    size = "small",
     srcs = ["hello_world_test.cc"],
     deps = [
         "@googletest//:gtest",

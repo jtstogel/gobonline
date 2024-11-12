@@ -1,5 +1,6 @@
 cc_test(
     name = "opencv_build_test",
+    size = "small",
     srcs = ["opencv_build_test.cc"],
     data = ["//src/testdata:test_image_files"],
     deps = [
