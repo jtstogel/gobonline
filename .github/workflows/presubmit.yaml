@@ -36,13 +36,6 @@ jobs:
         key: ${{ runner.os }}-bazelcache
         path: "/home/runner/.cache/bazel"
 
-    - name: Mount Bazel Cache
-      uses: actions/cache@v4
-      with:
-        path: "/home/runner/.cache/bazel"
-        key: bazelcache_${{ steps.cache_timestamp.outputs.time }}
-        restore-keys: bazelcache
-
     - name: Build
       run: bazel build //...
 
