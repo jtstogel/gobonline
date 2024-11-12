@@ -20,7 +20,7 @@ jobs:
         curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 18
         sudo apt-get install clang-tidy-18 clang-format-18
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -30,8 +30,14 @@ jobs:
       with:
         format: 'YYYY-MM-DD-HH-mm-ss'
 
+    - name: Restore Bazel Cache
+      uses: actions/cache/restore@v4
+      with:
+        key: ${{ runner.os }}-bazelcache
+        path: "/home/runner/.cache/bazel"
+
     - name: Mount Bazel Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: "/home/runner/.cache/bazel"
         key: bazelcache_${{ steps.cache_timestamp.outputs.time }}
@@ -45,9 +51,14 @@ jobs:
 
     - name: C++ Lint
       run: |
-        bazel build //...
         bazel run :refresh_compile_commands
         CC_SOURCES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
         xargs --null clang-tidy-18 < "$CC_SOURCES"
         xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"
+
+    - name: Save Bazel Cache
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ runner.os }}-bazelcache
+        path: "/home/runner/.cache/bazel"
