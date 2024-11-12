@@ -6,6 +6,7 @@ bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
     commit = "cd047b3c64fd4574642535a7108d5d998eefa923",
+    # Clayton's version handles protobuf compilation.
     remote = "https://github.com/ClaytonKnittel/bazel-compile-commands-extractor.git",
 )
 
