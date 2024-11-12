@@ -24,12 +24,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Create Cache Timestamp
-      id: cache_timestamp
-      uses: nanzm/get-time-action@v1.1
-      with:
-        format: 'YYYY-MM-DD-HH-mm-ss'
-
     - name: Restore Bazel Cache
       uses: actions/cache/restore@v4
       with:
