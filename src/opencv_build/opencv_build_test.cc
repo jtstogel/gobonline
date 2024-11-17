@@ -4,9 +4,9 @@
 
 TEST(OpenCV, ImageRead) {
   cv::Mat img = cv::imread(
-      "src/testdata/empty_rotated_dim_obstructed_board.jpeg", cv::IMREAD_COLOR);
+      "src/testdata/empty_angled.jpeg", cv::IMREAD_COLOR);
   cv::Size size = img.size();
 
-  EXPECT_EQ(size.width, 1000);
-  EXPECT_EQ(size.height, 750);
+  EXPECT_EQ(size.width, 480);
+  EXPECT_EQ(size.height, 640);
 }
