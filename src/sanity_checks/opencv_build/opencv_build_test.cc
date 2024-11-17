@@ -3,8 +3,7 @@
 #include "opencv2/imgcodecs.hpp"
 
 TEST(OpenCV, ImageRead) {
-  cv::Mat img = cv::imread(
-      "src/testdata/empty_angled.jpeg", cv::IMREAD_COLOR);
+  cv::Mat img = cv::imread("src/testdata/empty_angled.jpeg", cv::IMREAD_COLOR);
   cv::Size size = img.size();
 
   EXPECT_EQ(size.width, 480);
