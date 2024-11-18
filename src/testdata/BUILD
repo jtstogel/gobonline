@@ -1,7 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
-    name = "test_image_files",
+    name = "images",
     srcs = glob(["*.jpeg"]) + ["test_images.textproto"],
 )
 
