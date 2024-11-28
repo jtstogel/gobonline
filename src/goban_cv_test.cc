@@ -16,7 +16,8 @@ TEST(OpenCV, FindsGobanCorners) {
   cv::Mat im =
       cv::imread("src/testdata/empty_angled.jpeg", cv::IMREAD_GRAYSCALE);
   FindGobanOptions find_options = {
-      .aruco_marker_ids = {25, 14, 4, 7},
+      .aruco_markers = {.ids = {25, 14, 4, 7},
+                        .desc = {.length_millimeters = 40}},
   };
 
   absl::StatusOr<std::vector<cv::Point2f>> corners =
@@ -28,6 +29,9 @@ TEST(OpenCV, FindsGobanCorners) {
     std::cout << "(" << c.x << "," << c.y << "), ";
   }
   std::cout << std::endl;
+
+  auto s = ComputeGobanFindingCalibration(im, find_options);
+  ASSERT_OK(s.status());
 }
 
 }  // namespace gobonline

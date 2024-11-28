@@ -3,11 +3,17 @@ cc_library(
     srcs = ["goban_cv.cc"],
     hdrs = ["goban_cv.h"],
     deps = [
+        ":cv_macros",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@opencv-bazel//:opencv",
     ],
+)
+
+cc_library(
+    name = "cv_macros",
+    hdrs = ["cv_macros.h"],
 )
 
 cc_test(
