@@ -320,9 +320,6 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
       ComputeGobanGobanPerspectiveTransformParams(kWorkingWidthPixels,
                                                   *markers);
 
-  cv::Size dsize(xf_params.aruco_box_size_px.width,
-                 xf_params.aruco_box_size_px.height);
-
   std::vector<cv::Point2f> fixed_aruco_corner_locs = RectCorners(
       /*width=*/xf_params.aruco_box_size_px.width,
       /*height=*/xf_params.aruco_box_size_px.height, /*offset=*/0);
@@ -334,7 +331,7 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
   {
     SAVE_DBG_IM(im);
     CV_ASSIGN(cv::Mat, overhead_perspective, cv::warpPerspective, im, xf,
-              dsize);
+              xf_params.aruco_box_size_px);
 
     auto vert_lines =
         FindGobanLines(overhead_perspective, pixels_per_mm, Axis::kVertical);
@@ -365,7 +362,7 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
   {
     SAVE_DBG_IM(im);
     CV_ASSIGN(cv::Mat, overhead_perspective, cv::warpPerspective, im, xf,
-              dsize);
+              xf_params.aruco_box_size_px);
 
     cv::Mat annotated_intersections;
     im.copyTo(annotated_intersections);

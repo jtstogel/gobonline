@@ -22,6 +22,6 @@ bazel_dep(name = "rules_python", version = "0.36.0")
 bazel_dep(name = "opencv-bazel")
 git_override(
     module_name = "opencv-bazel",
-    commit = "412b3413c0818a887981d55901075c2cb960b0c6",
+    commit = "3b7e0f50a71b8089b9c20c279c5299e9af812973",
     remote = "https://github.com/jtstogel/opencv-bazel.git",
 )
