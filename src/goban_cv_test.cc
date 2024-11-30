@@ -14,7 +14,7 @@ namespace gobonline {
 
 TEST(OpenCV, FindsGobanCorners) {
   cv::Mat im =
-      cv::imread("src/testdata/empty_angled.jpeg", cv::IMREAD_GRAYSCALE);
+      cv::imread("src/testdata/empty_overhead.jpeg", cv::IMREAD_GRAYSCALE);
   FindGobanOptions find_options = {
       .aruco_markers = {.ids = {25, 14, 4, 7},
                         .desc = {.length_millimeters = 40}},

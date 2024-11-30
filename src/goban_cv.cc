@@ -15,25 +15,16 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/objdetect/aruco_detector.hpp"
 #include "src/cv_macros.h"
+#include "src/util/status.h"
+#include "src/util/union_find.h"
 
 namespace gobonline {
 namespace {
 
 using DetectedMarker = std::vector<cv::Point2f>;
 
-/**
- * The approximate width of the Goban we'll be operating on.
- *
- * This number doesn't represent anything in the real world;
- * it's just what we'll resize the Goban to.
- */
-constexpr int32_t kWorkingWidthPixels = 600;
-
-/** Standard size of the empty space between two lines on a Goban. */
+/** Approximate size of the empty space between two lines on a Goban. */
 constexpr double kGobanLineSpacingMillimeters = 22;
-
-/** Standard width of a line on a Goban. */
-constexpr double kGobanLineWidthMillimeters = 1;
 
 }  // namespace
 
@@ -103,8 +94,8 @@ std::string IntermediatePath(absl::string_view filename) {
                       filename);
 }
 
-#define SAVE_DBG_IM(im) \
-  cv::imwrite(IntermediatePath(absl::StrCat(#im, ".png")), im);
+#define SAVE_DBG_IM(im, name) \
+  cv::imwrite(IntermediatePath(absl::StrCat(name, ".png")), im);
 
 enum class Axis { kHorizontal = 0, kVertical = 1 };
 
@@ -130,6 +121,20 @@ float AruCoSideLength(const std::vector<DetectedMarker>& markers,
     }
   }
   return Median(aruco_side_lengths);
+}
+
+std::vector<double> SideLengths(const std::vector<cv::Point2f>& rect) {
+  std::vector<double> lengths;
+  lengths.reserve(4);
+  for (int i = 0; i < 4; i++) {
+    lengths.push_back(cv::norm(rect[i] - rect[(i + 1) % 4]));
+  }
+  return lengths;
+}
+
+double MaxSideNorm(const std::vector<cv::Point2f>& rect) {
+  std::vector<double> lengths = SideLengths(rect);
+  return *std::max_element(lengths.begin(), lengths.end());
 }
 
 int MakeOdd(int x) { return x | 1; }
@@ -190,120 +195,231 @@ cv::Mat Normalized(const cv::Mat& m) {
   return out;
 }
 
-std::optional<Axis> LineAxis(const cv::Vec4f& line,
-                             double slope_thresh = 0.05) {
-  cv::Point2f p1(line[0], line[1]);
-  cv::Point2f p2(line[2], line[3]);
-  float dy = std::abs(p1.y - p2.y);
-  float dx = std::abs(p1.x - p2.x);
-  if (dy < slope_thresh * dx) {
-    return Axis::kHorizontal;
+class Line {
+ public:
+  explicit Line(const cv::Vec4f& l) : p1_(l[0], l[1]), p2_(l[2], l[3]) {}
+
+  /** Returns the axis this line falls on, if it falls along one. */
+  std::optional<Axis> Axis(double slope_thresh = 0.05) const {
+    float dy = std::abs(p1_.y - p2_.y);
+    float dx = std::abs(p1_.x - p2_.x);
+    if (dy < slope_thresh * dx) {
+      return Axis::kHorizontal;
+    }
+    if (dx < slope_thresh * dy) {
+      return Axis::kVertical;
+    }
+    return std::nullopt;
   }
-  if (dx < slope_thresh * dy) {
-    return Axis::kVertical;
+
+  cv::Point2f Midpoint() const { return (p1_ + p2_) / 2; }
+
+ private:
+  cv::Point2f p1_;
+  cv::Point2f p2_;
+};
+
+std::vector<float> JoinNearbyValues(std::vector<float>& values,
+                                    float max_distance) {
+  // Don't _really_ need a union find for this,
+  // but it's a convenient abstraction.
+  UnionFind uf(values.size());
+  std::sort(values.begin(), values.end());
+  for (size_t i = 0; i < values.size() - 1; i++) {
+    if (std::abs(values[i] - values[i + 1]) <= max_distance) {
+      uf.Union(i, i + 1);
+    }
   }
-  return std::nullopt;
+
+  std::vector<float> joined_values;
+  for (std::vector<size_t>& grouped_positions : uf.Sets()) {
+    float avg_position = 0.;
+    for (size_t idx : grouped_positions) {
+      avg_position += values[idx];
+    }
+    avg_position /= grouped_positions.size();
+    joined_values.push_back(avg_position);
+  }
+
+  return joined_values;
 }
 
-std::vector<cv::Vec4f> FindGobanLines(const cv::Mat& im, double pixels_per_mm,
-                                      Axis axis) {
-  int spacing_width =
-      MakeOdd(std::lround(kGobanLineSpacingMillimeters * pixels_per_mm));
-  int line_width =
-      MakeOdd(std::lround(kGobanLineWidthMillimeters * pixels_per_mm));
-
-  cv::Size line_kernel_size = axis == Axis::kHorizontal
-                                  ? cv::Size(line_width, spacing_width)
-                                  : cv::Size(spacing_width, line_width);
-  cv::Mat line_kernel =
-      cv::getStructuringElement(cv::MorphShapes::MORPH_RECT, line_kernel_size);
-
-  // Approximate fraction of the Goban area filled in by lines.
-  double line_proportion_area =
-      2 * kGobanLineWidthMillimeters / kGobanLineSpacingMillimeters;
-  cv::Ptr<cv::CLAHE> equalizer = cv::createCLAHE(
-      /*clipLimit=*/255. * line_proportion_area,
-      /*tileGridSize=*/cv::Size(1.5 * spacing_width, 1.5 * spacing_width));
-
-  CV_ASSIGN_MAT(t, equalizer->apply, im);
-  CV_APPLY_MAT(t, cv::dilate, /*kernel=*/line_kernel);
-  CV_APPLY_MAT(t, cv::filter2D, /*ddepth=*/-1,
-               /*kernel=*/Normalized(line_kernel));
-  CV_APPLY_MAT(t, cv::Canny, /*threshold1=*/100, /*threshold2=*/200);
-  CV_ASSIGN(std::vector<cv::Vec4f>, lines, cv::HoughLinesP, t, /*rho=*/1,
-            /*theta=*/CV_PI / 180,
-            /*threshold=*/80, /*minLineLength=*/3 * spacing_width);
-
-  // Remove lines that aren't along the specified axis.
-  std::vector<cv::Vec4f> axis_lines;
-  axis_lines.reserve(lines.size());
-  for (const cv::Vec4f& line : lines) {
-    std::optional<Axis> line_axis = LineAxis(line);
+/**
+ * Returns only the lines that lie along the specified axis.
+ *
+ * If Axis::kHorizontal, returns the y-coordinates of horizontal lines,
+ * if Axis::kVertical, returns the x-coordinates of vertical lines.
+ */
+std::vector<float> PickAxisAlignedLines(absl::Span<const Line> lines,
+                                        Axis axis) {
+  std::vector<float> coordinates;
+  coordinates.reserve(lines.size());
+  for (const Line& l : lines) {
+    std::optional<Axis> line_axis = l.Axis();
     if (line_axis.has_value() && *line_axis == axis) {
-      axis_lines.push_back(std::move(line));
+      cv::Point2f mid = l.Midpoint();
+      coordinates.push_back(axis == Axis::kHorizontal ? mid.y : mid.x);
     }
+  }
+  return coordinates;
+}
+
+/**
+ * Returns only the lines that lie along the specified axis.
+ *
+ * If Axis::kHorizontal, returns the y-coordinates of horizontal lines,
+ * if Axis::kVertical, returns the x-coordinates of vertical lines.
+ */
+std::vector<Line> VecsToLines(absl::Span<const cv::Vec4f> vector_lines) {
+  std::vector<Line> lines;
+  for (const cv::Vec4f& l : vector_lines) {
+    lines.emplace_back(l);
   }
   return lines;
 }
 
-std::optional<cv::Point2f> LineIntersection(const cv::Vec4f& l1,
-                                            const cv::Vec4f& l2) {
-  cv::Point2f a1(l1[0], l1[1]);
-  cv::Point2f b1(l1[2], l1[3]);
-  cv::Point2f a2(l2[0], l2[1]);
-  cv::Point2f b2(l2[2], l2[3]);
+std::vector<float> FindGobanLines(const cv::Mat& im, double pixels_per_mm,
+                                  Axis axis) {
+  int spacing_width =
+      MakeOdd(std::lround(kGobanLineSpacingMillimeters * pixels_per_mm));
 
-  cv::Point2f x = a2 - a1;
-  cv::Point2f d1 = b1 - a1;
-  cv::Point2f d2 = b2 - a2;
+  int line_kernel_size = 2 * spacing_width;
+  cv::Size line_kernel_size_2d = axis == Axis::kVertical
+                                     ? cv::Size(1, line_kernel_size)
+                                     : cv::Size(line_kernel_size, 1);
+  cv::Mat line_morph_kernel = cv::getStructuringElement(
+      cv::MorphShapes::MORPH_RECT, line_kernel_size_2d);
+  cv::Mat line_filter_kernel = cv::Mat::zeros(line_kernel_size_2d, CV_64F);
+  for (int i = 0; i < line_kernel_size; i++) {
+    line_filter_kernel.ptr<double>()[i] = std::min(i, line_kernel_size - i);
+  }
+  line_filter_kernel /= cv::sum(line_filter_kernel);
 
-  float cross = d1.x * d2.y - d1.y * d2.x;
-  if (std::abs(cross) < 1e-7) {
-    return std::nullopt;
+  cv::Ptr<cv::CLAHE> equalizer = cv::createCLAHE(
+      /*clipLimit=*/3.,
+      /*tileGridSize=*/cv::Size(3 * spacing_width, 3 * spacing_width));
+
+  CV_ASSIGN_MAT(equalized, equalizer->apply, im);
+  CV_ASSIGN_MAT(dilated, cv::dilate, equalized, /*kernel=*/line_morph_kernel);
+  CV_ASSIGN_MAT(filtered, cv::filter2D, dilated, /*ddepth=*/-1,
+                /*kernel=*/line_filter_kernel);
+  CV_ASSIGN_MAT(canny, cv::Canny, filtered, /*threshold1=*/100,
+                /*threshold2=*/200);
+  CV_ASSIGN(std::vector<cv::Vec4f>, hough_lines, cv::HoughLinesP, canny,
+            /*rho=*/1,
+            /*theta=*/CV_PI / 180,
+            /*threshold=*/80, /*minLineLength=*/3 * spacing_width);
+
+  {
+    std::string dbg_name =
+        axis == Axis::kHorizontal ? "horizontal" : "vertical";
+    SAVE_DBG_IM(im, absl::StrCat("perspective_", dbg_name));
+    SAVE_DBG_IM(equalized, absl::StrCat("equalized_", dbg_name));
+    SAVE_DBG_IM(dilated, absl::StrCat("dilate_", dbg_name));
+    SAVE_DBG_IM(filtered, absl::StrCat("filter2D_", dbg_name));
+    SAVE_DBG_IM(canny, absl::StrCat("canny_", dbg_name));
   }
 
-  double t1 = (x.x * d2.y - x.y * d2.x) / cross;
-  if (t1 < 0 || 1 < t1) {
-    return std::nullopt;
-  }
-  return a1 + d1 * t1;
+  std::vector<float> line_positions =
+      PickAxisAlignedLines(VecsToLines(hough_lines), axis);
+
+  // Canny edge detection may detect both sides of a line,
+  // so we join detected lines that are very close together.
+  std::vector<float> positions = JoinNearbyValues(
+      line_positions, kGobanLineSpacingMillimeters * pixels_per_mm / 4);
+  std::sort(positions.begin(), positions.end());
+
+  return positions;
+}
+
+template <typename T>
+T clip(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
 }
 
 /**
- * Finds the four corners of a Goban's grid in `im`,
- * given an overhead, aligned image of the goban.
+ * Fits a 1D grid to the provided values.
+ *
+ * Returns the spacing between lines of the grid.
  */
-std::vector<cv::Point2f> FindGobanGridIntersections(const cv::Mat& im,
-                                                    double pixels_per_mm) {
-  std::vector<cv::Vec4f> vertical_lines =
+double Fit1dGrid(const std::vector<float>& points, float center_point,
+                 int grid_size) {
+  std::vector<float> centered_points;
+  centered_points.reserve(points.size());
+  for (float p : points) {
+    centered_points.push_back(std::abs(p - center_point));
+  }
+
+  class ErrorFunction : public cv::MinProblemSolver::Function {
+   public:
+    ErrorFunction(const std::vector<float>& points, int grid_size)
+        : points_(points), grid_size_(grid_size) {}
+
+    double calc(const double* x) const override {
+      double error = 0;
+      for (double p : points_) {
+        int64_t grid_line =
+            std::min<int64_t>(std::lround(p / x[0]), grid_size_);
+        error += std::abs(p - (grid_line * x[0]));
+      }
+      return error;
+    }
+
+    int getDims() const override { return 2; }
+
+   private:
+    const std::vector<float>& points_;
+    int grid_size_;
+  };
+
+  cv::Ptr<cv::DownhillSolver> solver = cv::DownhillSolver::create();
+  cv::Ptr<cv::MinProblemSolver::Function> f(
+      new ErrorFunction(centered_points, grid_size / 2));
+  solver->setFunction(f);
+
+  cv::Mat step(2, 1, CV_64FC1);
+  step.ptr<double>()[0] = 0.1;
+  solver->setInitStep(step);
+
+  cv::Mat x(2, 1, CV_64FC1);
+  x.ptr<double>()[0] = (2 * center_point) / static_cast<double>(grid_size);
+  solver->minimize(x);
+
+  return x.ptr<double>()[0];
+}
+
+/**
+ * Finds the four corners of a Goban's grid in `im`.
+ *
+ * The image of the goban must be:
+ *   * Overhead - grid spacing must be uniform.
+ *   * Aligned  - lines are horizontal and vertical.
+ *   * Centered - tengen is the center pixel.
+ */
+std::vector<cv::Point2f> FindGobanGrid(const cv::Mat& im, double pixels_per_mm,
+                                       int grid_size) {
+  std::vector<float> vertical_line_xs =
       FindGobanLines(im, pixels_per_mm, Axis::kVertical);
-  std::vector<cv::Vec4f> horizontal_lines =
+  std::vector<float> horizontal_line_ys =
       FindGobanLines(im, pixels_per_mm, Axis::kHorizontal);
 
-  std::vector<cv::Point2f> intersections;
-  for (const cv::Vec4f& vertical_line : vertical_lines) {
-    for (const cv::Vec4f& horizontal_line : horizontal_lines) {
-      std::optional<cv::Point2f> p =
-          LineIntersection(vertical_line, horizontal_line);
-      if (p.has_value()) {
-        intersections.push_back(std::move(*p));
-      }
-    }
-  }
+  cv::Point2f center = cv::Point2f(im.size().width, im.size().height) / 2;
 
-  return intersections;
-}
+  double vertical_line_spacing =
+      Fit1dGrid(vertical_line_xs, center.x, grid_size);
+  double horizontal_line_spacing =
+      Fit1dGrid(horizontal_line_ys, center.y, grid_size);
 
-/**
- * Fits a size-by-size grid to the provided intersections.
- *
- * Returns the four corners of the grid in clockwise order starting from the
- * top-left corner.
- */
-std::vector<cv::Point2f> FitGrid(const std::vector<cv::Point2f>& intersections,
-                                 int size) {
-  (void)size;
-  return std::vector(intersections);
+  cv::Point2f dx = (grid_size - 1) / 2 * cv::Point2f(vertical_line_spacing, 0);
+  cv::Point2f dy =
+      (grid_size - 1) / 2 * cv::Point2f(0, horizontal_line_spacing);
+
+  return {
+      center - dx - dy,
+      center + dx - dy,
+      center + dx + dy,
+      center - dx + dy,
+  };
 }
 
 /**
@@ -311,14 +427,13 @@ std::vector<cv::Point2f> FitGrid(const std::vector<cv::Point2f>& intersections,
  */
 absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
     const cv::Mat& im, const FindGobanOptions& options) {
-  absl::StatusOr<std::vector<DetectedMarker>> markers =
-      FindGobanAruCoMarkers(im, options);
-  if (!markers.ok()) return markers.status();
+  ASSIGN_OR_RETURN(std::vector<DetectedMarker> markers,
+                   FindGobanAruCoMarkers(im, options));
 
-  std::vector<cv::Point2f> inner_rect = AruCoGobanInnerRect(*markers);
+  std::vector<cv::Point2f> inner_rect = AruCoGobanInnerRect(markers);
+  size_t working_width = std::lround(MaxSideNorm(inner_rect));
   GobanPerspectiveTransformParams xf_params =
-      ComputeGobanGobanPerspectiveTransformParams(kWorkingWidthPixels,
-                                                  *markers);
+      ComputeGobanGobanPerspectiveTransformParams(working_width, markers);
 
   std::vector<cv::Point2f> fixed_aruco_corner_locs = RectCorners(
       /*width=*/xf_params.aruco_box_size_px.width,
@@ -328,79 +443,45 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
   double pixels_per_mm =
       xf_params.aruco_size_px / options.aruco_markers.desc.length_millimeters;
 
-  {
-    SAVE_DBG_IM(im);
-    CV_ASSIGN(cv::Mat, overhead_perspective, cv::warpPerspective, im, xf,
-              xf_params.aruco_box_size_px);
-
-    auto vert_lines =
-        FindGobanLines(overhead_perspective, pixels_per_mm, Axis::kVertical);
-    auto horz_lines =
-        FindGobanLines(overhead_perspective, pixels_per_mm, Axis::kHorizontal);
-
-    cv::Mat annotated_lines;
-    im.copyTo(annotated_lines);
-
-    std::vector<cv::Vec4f> lines;
-    lines.insert(lines.end(), vert_lines.begin(), vert_lines.end());
-    lines.insert(lines.end(), horz_lines.begin(), horz_lines.end());
-
-    cv::Mat reverse_xf;
-    cv::invert(xf, reverse_xf);
-    for (auto& i : lines) {
-      std::vector<cv::Point2f> points = {cv::Point2f(i[0], i[1]),
-                                         cv::Point2f(i[2], i[3])};
-      std::vector<cv::Point2f> points_in_original;
-      cv::perspectiveTransform(points, points_in_original, reverse_xf);
-      cv::line(annotated_lines, points_in_original[0], points_in_original[1],
-               cv::Scalar(0, 0, 255), 1, 8);
-    }
-
-    SAVE_DBG_IM(annotated_lines);
-  }
+  CV_ASSIGN(cv::Mat, overhead_perspective, cv::warpPerspective, im, xf,
+            xf_params.aruco_box_size_px);
+  std::vector<cv::Point2f> grid_corners =
+      FindGobanGrid(overhead_perspective, pixels_per_mm, 19);
 
   {
-    SAVE_DBG_IM(im);
-    CV_ASSIGN(cv::Mat, overhead_perspective, cv::warpPerspective, im, xf,
-              xf_params.aruco_box_size_px);
-
     cv::Mat annotated_intersections;
     im.copyTo(annotated_intersections);
-
-    std::vector<cv::Point2f> intersections =
-        FindGobanGridIntersections(overhead_perspective, pixels_per_mm);
-
     cv::Mat reverse_xf;
     cv::invert(xf, reverse_xf);
     std::vector<cv::Point2f> points_in_original;
-    cv::perspectiveTransform(intersections, points_in_original, reverse_xf);
-
+    cv::perspectiveTransform(grid_corners, points_in_original, reverse_xf);
     for (auto& p : points_in_original) {
-      cv::circle(annotated_intersections, p, 0, cv::Scalar(0, 0, 255));
+      cv::circle(annotated_intersections, p, pixels_per_mm,
+                 cv::Scalar(0, 0, 255));
     }
-
-    SAVE_DBG_IM(annotated_intersections);
+    SAVE_DBG_IM(im, "original_image");
+    SAVE_DBG_IM(annotated_intersections, "annotated_intersections");
   }
 
   return GobanFindingCalibration{
       .options = options,
       .aruco_box_size_px = xf_params.aruco_box_size_px,
+      .grid_corners = grid_corners,
       .pixels_per_mm = pixels_per_mm,
   };
 }
 
 absl::StatusOr<std::vector<cv::Point2f>> FindGoban(
     const cv::Mat& im, const FindGobanOptions& options) {
-  absl::StatusOr<std::vector<DetectedMarker>> markers =
-      FindGobanAruCoMarkers(im, options);
-  if (!markers.ok()) return markers.status();
+  ASSIGN_OR_RETURN(std::vector<DetectedMarker> markers,
+                   FindGobanAruCoMarkers(im, options));
 
   std::vector<cv::Point2f> goban_aruco_rect(4);
   for (int i = 0; i < 4; i++) {
     // AruCo corners are returned in clockwise order starting from the top left,
     // so offset the index by two in order to get the corner that is closest to
     // the Goban's grid corners.
-    goban_aruco_rect.push_back(markers.value()[i][(i + 2) % 4]);
+    goban_aruco_rect.push_back(markers[i][(i + 2) % 4]);
   }
   return goban_aruco_rect;
 }

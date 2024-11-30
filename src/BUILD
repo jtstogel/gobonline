@@ -4,6 +4,8 @@ cc_library(
     hdrs = ["goban_cv.h"],
     deps = [
         ":cv_macros",
+        "//src/util:status",
+        "//src/util:union_find",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",

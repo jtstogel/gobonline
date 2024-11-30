@@ -17,7 +17,7 @@
     f(in, out, ##__VA_ARGS__);          \
   } while (false);
 
-#define CV_APPLY_MAT(in, f, ...)                           \
+#define CV_REASSIGN_MAT(in, f, ...)                        \
   do {                                                     \
     cv::Mat tmp_variable_cv_macros_internal;               \
     f(in, tmp_variable_cv_macros_internal, ##__VA_ARGS__); \
