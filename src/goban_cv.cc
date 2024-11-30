@@ -158,9 +158,12 @@ std::vector<cv::Point2f> AruCoGobanInnerRect(
 }
 
 GobanPerspectiveTransformParams ComputeGobanGobanPerspectiveTransformParams(
-    size_t goban_width_px, const std::vector<DetectedMarker>& markers) {
+    const std::vector<DetectedMarker>& markers) {
   std::vector<cv::Point2f> inner_rect = AruCoGobanInnerRect(markers);
 
+  // Use the maximum side length of the Goban for the dimensions of the
+  // transformed image.
+  int64_t goban_width_px = std::lround(MaxSideNorm(inner_rect));
   cv::Size(goban_width_px, goban_width_px);
   std::vector<cv::Point2f> aruco_square_corner_locs =
       RectCorners(goban_width_px, goban_width_px, /*offset=*/0);
@@ -392,9 +395,9 @@ double Fit1dGrid(const std::vector<float>& points, float center_point,
  * Finds the four corners of a Goban's grid in `im`.
  *
  * The image of the goban must be:
- *   * Overhead - grid spacing must be uniform.
- *   * Aligned  - lines are horizontal and vertical.
- *   * Centered - tengen is the center pixel.
+ *   * Overhead - spacing between grid lines must be uniform.
+ *   * Aligned  - lines are only horizontal and vertical.
+ *   * Centered - Tengen is the center pixel.
  */
 std::vector<cv::Point2f> FindGobanGrid(const cv::Mat& im, double pixels_per_mm,
                                        int grid_size) {
@@ -430,11 +433,10 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
   ASSIGN_OR_RETURN(std::vector<DetectedMarker> markers,
                    FindGobanAruCoMarkers(im, options));
 
-  std::vector<cv::Point2f> inner_rect = AruCoGobanInnerRect(markers);
-  size_t working_width = std::lround(MaxSideNorm(inner_rect));
   GobanPerspectiveTransformParams xf_params =
-      ComputeGobanGobanPerspectiveTransformParams(working_width, markers);
+      ComputeGobanGobanPerspectiveTransformParams(markers);
 
+  std::vector<cv::Point2f> inner_rect = AruCoGobanInnerRect(markers);
   std::vector<cv::Point2f> fixed_aruco_corner_locs = RectCorners(
       /*width=*/xf_params.aruco_box_size_px.width,
       /*height=*/xf_params.aruco_box_size_px.height, /*offset=*/0);
@@ -447,21 +449,6 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
             xf_params.aruco_box_size_px);
   std::vector<cv::Point2f> grid_corners =
       FindGobanGrid(overhead_perspective, pixels_per_mm, 19);
-
-  {
-    cv::Mat annotated_intersections;
-    im.copyTo(annotated_intersections);
-    cv::Mat reverse_xf;
-    cv::invert(xf, reverse_xf);
-    std::vector<cv::Point2f> points_in_original;
-    cv::perspectiveTransform(grid_corners, points_in_original, reverse_xf);
-    for (auto& p : points_in_original) {
-      cv::circle(annotated_intersections, p, pixels_per_mm,
-                 cv::Scalar(0, 0, 255));
-    }
-    SAVE_DBG_IM(im, "original_image");
-    SAVE_DBG_IM(annotated_intersections, "annotated_intersections");
-  }
 
   return GobanFindingCalibration{
       .options = options,
@@ -476,7 +463,8 @@ absl::StatusOr<std::vector<cv::Point2f>> FindGoban(
   ASSIGN_OR_RETURN(std::vector<DetectedMarker> markers,
                    FindGobanAruCoMarkers(im, options));
 
-  std::vector<cv::Point2f> goban_aruco_rect(4);
+  std::vector<cv::Point2f> goban_aruco_rect;
+  goban_aruco_rect.reserve(4);
   for (int i = 0; i < 4; i++) {
     // AruCo corners are returned in clockwise order starting from the top left,
     // so offset the index by two in order to get the corner that is closest to

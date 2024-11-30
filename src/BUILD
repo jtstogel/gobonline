@@ -26,6 +26,7 @@ cc_test(
     data = ["//src/testdata:images"],
     deps = [
         ":goban_cv",
+        "//src/util:status_test_utils",
         "@abseil-cpp//absl/status:statusor",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
