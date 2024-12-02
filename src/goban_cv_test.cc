@@ -1,6 +1,5 @@
 #include "src/goban_cv.h"
 
-#include <filesystem>
 #include <fstream>
 #include <vector>
 
@@ -89,7 +88,7 @@ INSTANTIATE_TEST_SUITE_P(
     GobanCVTests, GobanCVTest, ::testing::ValuesIn(LoadTestImages()),
     [](const testing::TestParamInfo<::testdata::TestImage>& info) {
       std::string s(info.param.file_name());
-      absl::StrReplaceAll({{".", ""}}, &s);
+      absl::StrReplaceAll({{".", "_"}}, &s);
       return s;
     });
 

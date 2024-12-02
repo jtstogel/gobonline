@@ -7,10 +7,6 @@
 
 namespace gobonline {
 
-struct Quadrangle2f {
-  cv::Point2f top_left, top_right, bottom_left, bottom_right;
-};
-
 struct AruCoMarkerDesc {
   double length_millimeters = 40;
   cv::aruco::PredefinedDictionaryType aruco_dictionary =

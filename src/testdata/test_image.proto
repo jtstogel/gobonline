@@ -41,7 +41,7 @@ message TestImage {
     //   ". . . . . . . . .",
     //   ". . . . . . . . .",
     // ]
-    repeated string strigified_stones = 3;
+    repeated string stringified_stones = 3;
 }
 
 // Root message describing a set of test images.

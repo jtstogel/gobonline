@@ -36,8 +36,3 @@ cc_test(
         "@protobuf//:protobuf",
     ],
 )
-
-cc_library(
-    name = "constants",
-    hdrs = ["constants.h"],
-)
