@@ -30,7 +30,7 @@ std::vector<::testdata::TestImage> LoadTestImages() {
   }
 
   std::vector<::testdata::TestImage> images;
-  for (auto& im : test_images.test_images()) {
+  for (const auto& im : test_images.test_images()) {
     images.push_back(std::move(im));
   }
 
