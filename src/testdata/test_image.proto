@@ -14,7 +14,7 @@ message Rectangle {
     Point bottom_left = 4;
 }
 
-message GobanImage {
+message TestImage {
     string file_name = 1;
 
     // A rectangle outlining the lines of the goban.
@@ -46,5 +46,5 @@ message GobanImage {
 
 // Root message describing a set of test images.
 message TestImages {
-    repeated GobanImage test_images = 1;
+    repeated TestImage test_images = 1;
 }

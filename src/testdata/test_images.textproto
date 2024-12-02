@@ -17,3 +17,23 @@ test_images {
         bottom_left { row: 425, column: 122 }
     }
 }
+
+test_images {
+    file_name: "stones_overhead.jpg"
+    goban_rectangle {
+        top_left { row: 806, column: 302 }
+        top_right { row: 671, column: 930 }
+        bottom_right { row: 1303, column: 1226 }
+        bottom_left { row: 1530, column: 422 }
+    }
+}
+
+test_images {
+    file_name: "few_stones_overhead.jpeg"
+    goban_rectangle {
+        top_left { row: 471, column: 362 }
+        top_right { row: 478, column: 1230 }
+        bottom_right { row: 1446, column: 1228 }
+        bottom_left { row: 1436, column: 348 }
+    }
+}

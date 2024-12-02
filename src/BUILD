@@ -26,11 +26,14 @@ cc_test(
     data = ["//src/testdata:images"],
     deps = [
         ":goban_cv",
+        "//src/testdata:test_image_cc_proto",
         "//src/util:status_test_utils",
         "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@opencv-bazel//:opencv",
+        "@protobuf//:protobuf",
     ],
 )
 
