@@ -63,8 +63,4 @@ absl::StatusOr<BoardState> ReadBoardState(
     absl::string_view debug_name, const cv::Mat& im,
     const GobanFindingCalibration& calibration);
 
-/** Returns locations of the corners of the Goban's grid. */
-absl::StatusOr<std::vector<cv::Point2f>> FindGoban(
-    const cv::Mat& im, const GobanFindingCalibration& calibration);
-
 }  // namespace gobonline

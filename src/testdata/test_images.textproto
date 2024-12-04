@@ -1,5 +1,5 @@
 test_images {
-    file_name: "empty_angled.jpeg"
+    file_name: "src/testdata/empty_angled.jpeg"
     goban_rectangle {
         top_left { row: 224, column: 155 }
         top_right { row: 231, column: 371 }
@@ -30,7 +30,7 @@ test_images {
 }
 
 test_images {
-    file_name: "empty_overhead.jpeg"
+    file_name: "src/testdata/empty_overhead.jpeg"
     goban_rectangle {
         top_left { row: 169, column: 88 }
         top_right { row: 142, column: 353 }
@@ -61,7 +61,7 @@ test_images {
 }
 
 test_images {
-    file_name: "stones_overhead.jpg"
+    file_name: "src/testdata/stones_overhead.jpg"
     goban_rectangle {
         top_left { row: 806, column: 302 }
         top_right { row: 671, column: 930 }
@@ -92,7 +92,7 @@ test_images {
 }
 
 test_images {
-    file_name: "few_stones_overhead.jpeg"
+    file_name: "src/testdata/few_stones_overhead.jpeg"
     goban_rectangle {
         top_left { row: 471, column: 362 }
         top_right { row: 478, column: 1230 }
@@ -123,7 +123,7 @@ test_images {
 }
 
 test_images {
-    file_name: "few_stones_glare.jpg"
+    file_name: "src/testdata/few_stones_glare.jpg"
     goban_rectangle {
         top_left { row: 900, column: 287 }
         top_right { row: 679, column: 807 }

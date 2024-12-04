@@ -1,5 +1,6 @@
 #include "src/goban_cv.h"
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <utility>
@@ -7,7 +8,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
@@ -39,9 +39,9 @@ std::vector<::testdata::TestImage> LoadTestImages() {
   return images;
 }
 
-std::string BaseName(absl::string_view s) {
-  auto splitter = absl::StrSplit(s, '.');
-  return std::string(*splitter.begin());
+std::string BaseName(absl::string_view path) {
+  std::filesystem::path p(path);
+  return std::string(*absl::StrSplit(p.filename().string(), '.').begin());
 }
 
 cv::Point2f TestDataPoint(const ::testdata::Point& p) {
@@ -79,8 +79,7 @@ std::string StringifyStones(const BoardState& state) {
 
 TEST_P(GobanCVTest, FindsGobanCorners) {
   ::testdata::TestImage test_image = GetParam();
-  cv::Mat im = cv::imread(absl::StrCat("src/testdata/", test_image.file_name()),
-                          cv::IMREAD_GRAYSCALE);
+  cv::Mat im = cv::imread(test_image.file_name(), cv::IMREAD_GRAYSCALE);
 
   FindGobanOptions find_options = {
       .aruco_markers = {.ids = {25, 14, 4, 7},
@@ -120,8 +119,7 @@ TEST_P(GobanCVTest, FindsGobanCorners) {
 
 TEST_P(GobanCVTest, FindsStones) {
   ::testdata::TestImage test_image = GetParam();
-  cv::Mat im = cv::imread(absl::StrCat("src/testdata/", test_image.file_name()),
-                          cv::IMREAD_GRAYSCALE);
+  cv::Mat im = cv::imread(test_image.file_name(), cv::IMREAD_GRAYSCALE);
 
   FindGobanOptions find_options = {
       .aruco_markers = {.ids = {25, 14, 4, 7},
