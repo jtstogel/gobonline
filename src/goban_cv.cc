@@ -123,7 +123,7 @@ double MedianRadius(const std::vector<cv::Vec3f>& circles) {
   for (const auto& circle : circles) {
     stone_radii.push_back(circle[2]);
   }
-  if (stone_radii.size() == 0) {
+  if (stone_radii.empty()) {
     return 0;
   }
   return Median(stone_radii);
