@@ -3,6 +3,7 @@ cc_library(
     srcs = ["goban_cv.cc"],
     hdrs = ["goban_cv.h"],
     deps = [
+        ":board_state_cc_proto",
         ":cv_macros",
         "//src/util:status",
         "//src/util:union_find",
@@ -33,6 +34,16 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@opencv-bazel//:opencv",
-        "@protobuf//:protobuf",
+        "@protobuf",
     ],
+)
+
+proto_library(
+    name = "board_state_proto",
+    srcs = ["board_state.proto"],
+)
+
+cc_proto_library(
+    name = "board_state_cc_proto",
+    deps = [":board_state_proto"],
 )

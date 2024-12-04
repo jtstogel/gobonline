@@ -1,9 +1,11 @@
 #include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "opencv2/core/mat.hpp"
 #include "opencv2/core/types.hpp"
 #include "opencv2/objdetect/aruco_dictionary.hpp"
+#include "src/board_state.pb.h"
 
 namespace gobonline {
 
@@ -23,6 +25,7 @@ struct AruCoMarkers {
 
 struct FindGobanOptions {
   AruCoMarkers aruco_markers;
+  int grid_size;
 };
 
 struct GobanFindingCalibration {
@@ -50,13 +53,18 @@ struct GobanFindingCalibration {
  * the grid on the Goban for calibration.
  */
 absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
-    const cv::Mat& im, const FindGobanOptions& options);
+    absl::string_view debug_name, const cv::Mat& im,
+    const FindGobanOptions& options);
 
 /**
- * Returns the four corners of a goban's grid,
- * starting from the top left in clockwise order.
+ * Reads the live state of the Goban from the provided image.
  */
+absl::StatusOr<BoardState> ReadBoardState(
+    absl::string_view debug_name, const cv::Mat& im,
+    const GobanFindingCalibration& calibration);
+
+/** Returns locations of the corners of the Goban's grid. */
 absl::StatusOr<std::vector<cv::Point2f>> FindGoban(
-    const cv::Mat& im, const FindGobanOptions& options);
+    const cv::Mat& im, const GobanFindingCalibration& calibration);
 
 }  // namespace gobonline

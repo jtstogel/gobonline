@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -14,6 +15,7 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/objdetect/aruco_detector.hpp"
+#include "src/board_state.pb.h"
 #include "src/cv_macros.h"
 #include "src/util/status.h"
 #include "src/util/union_find.h"
@@ -25,6 +27,10 @@ using DetectedMarker = std::vector<cv::Point2f>;
 
 /** Approximate size of the empty space between two lines on a Goban. */
 constexpr double kGobanLineSpacingMillimeters = 22;
+
+constexpr int64_t kMinWorkingWidthPx = 400;
+constexpr int64_t kMaxWorkingWidthPx = 800;
+constexpr uint8_t kStoneColorThresh = 127;
 
 }  // namespace
 
@@ -90,12 +96,18 @@ std::vector<cv::Point2f> RectCorners(float width, float height, float offset) {
 }
 
 std::string IntermediatePath(absl::string_view filename) {
-  return absl::StrCat("/home/jtstogel/github/jtstogel/gobonline/tmp/",
-                      filename);
+  std::filesystem::create_directory("/tmp/gobonline");
+  std::filesystem::create_directory("/tmp/gobonline/debug");
+  return absl::StrCat("/tmp/gobonline/debug/", filename);
 }
 
-#define SAVE_DBG_IM(im, name) \
-  cv::imwrite(IntermediatePath(absl::StrCat(name, ".png")), im);
+#define SAVE_DBG_IM(im, ...)                                               \
+  do {                                                                     \
+    std::vector<absl::string_view> name_parts = {__VA_ARGS__};             \
+    cv::imwrite(IntermediatePath(                                          \
+                    absl::StrCat(absl::StrJoin(name_parts, "_"), ".png")), \
+                im);                                                       \
+  } while (false)
 
 enum class Axis { kHorizontal = 0, kVertical = 1 };
 
@@ -103,6 +115,18 @@ template <typename T>
 T Median(std::vector<T>& v) {
   std::sort(v.begin(), v.end());
   return v[v.size() / 2];
+}
+
+double MedianRadius(const std::vector<cv::Vec3f>& circles) {
+  std::vector<double> stone_radii;
+  stone_radii.reserve(circles.size());
+  for (const auto& circle : circles) {
+    stone_radii.push_back(circle[2]);
+  }
+  if (stone_radii.size() == 0) {
+    return 0;
+  }
+  return Median(stone_radii);
 }
 
 /**
@@ -161,9 +185,10 @@ GobanPerspectiveTransformParams ComputeGobanGobanPerspectiveTransformParams(
     const std::vector<DetectedMarker>& markers) {
   std::vector<cv::Point2f> inner_rect = AruCoGobanInnerRect(markers);
 
-  // Use the maximum side length of the Goban for the dimensions of the
-  // transformed image.
-  int64_t goban_width_px = std::lround(MaxSideNorm(inner_rect));
+  // Use the maximum side length of the Goban for the dimensions
+  // of the transformed image.
+  int64_t goban_width_px = std::clamp(std::lround(MaxSideNorm(inner_rect)),
+                                      kMinWorkingWidthPx, kMaxWorkingWidthPx);
   cv::Size(goban_width_px, goban_width_px);
   std::vector<cv::Point2f> aruco_square_corner_locs =
       RectCorners(goban_width_px, goban_width_px, /*offset=*/0);
@@ -189,13 +214,6 @@ GobanPerspectiveTransformParams ComputeGobanGobanPerspectiveTransformParams(
           cv::Size((rect[1] - rect[0]).x, (rect[2] - rect[1]).y),
       .aruco_size_px = aruco_width_px,
   };
-}
-
-cv::Mat Normalized(const cv::Mat& m) {
-  cv::Mat out;
-  m.convertTo(out, CV_64F);
-  out /= cv::sum(out);
-  return out;
 }
 
 class Line {
@@ -268,10 +286,7 @@ std::vector<float> PickAxisAlignedLines(absl::Span<const Line> lines,
 }
 
 /**
- * Returns only the lines that lie along the specified axis.
- *
- * If Axis::kHorizontal, returns the y-coordinates of horizontal lines,
- * if Axis::kVertical, returns the x-coordinates of vertical lines.
+ * Converts the given cv::Vec4f formatted lines to `Line` objects.
  */
 std::vector<Line> VecsToLines(absl::Span<const cv::Vec4f> vector_lines) {
   std::vector<Line> lines;
@@ -281,7 +296,8 @@ std::vector<Line> VecsToLines(absl::Span<const cv::Vec4f> vector_lines) {
   return lines;
 }
 
-std::vector<float> FindGobanLines(const cv::Mat& im, double pixels_per_mm,
+std::vector<float> FindGobanLines(absl::string_view debug_name,
+                                  const cv::Mat& im, double pixels_per_mm,
                                   Axis axis) {
   int spacing_width =
       MakeOdd(std::lround(kGobanLineSpacingMillimeters * pixels_per_mm));
@@ -314,13 +330,12 @@ std::vector<float> FindGobanLines(const cv::Mat& im, double pixels_per_mm,
             /*threshold=*/80, /*minLineLength=*/3 * spacing_width);
 
   {
-    std::string dbg_name =
+    std::string direction =
         axis == Axis::kHorizontal ? "horizontal" : "vertical";
-    SAVE_DBG_IM(im, absl::StrCat("perspective_", dbg_name));
-    SAVE_DBG_IM(equalized, absl::StrCat("equalized_", dbg_name));
-    SAVE_DBG_IM(dilated, absl::StrCat("dilate_", dbg_name));
-    SAVE_DBG_IM(filtered, absl::StrCat("filter2D_", dbg_name));
-    SAVE_DBG_IM(canny, absl::StrCat("canny_", dbg_name));
+    SAVE_DBG_IM(equalized, debug_name, direction, "equalized");
+    SAVE_DBG_IM(dilated, debug_name, direction, "dilate");
+    SAVE_DBG_IM(filtered, debug_name, direction, "filter2D");
+    SAVE_DBG_IM(canny, debug_name, direction, "canny");
   }
 
   std::vector<float> line_positions =
@@ -341,54 +356,66 @@ T clip(const T& n, const T& lower, const T& upper) {
 }
 
 /**
+ * Finds the spacing of a 1D grid such that the sum of squared distances from
+ * the points to the grid lines is minimized.
+ */
+class Fit1dGridProblem : public cv::MinProblemSolver::Function {
+ public:
+  static double FindSpacing(const std::vector<float>& points, int grid_size,
+                            double initial) {
+    cv::Ptr<cv::DownhillSolver> solver = cv::DownhillSolver::create();
+    cv::Ptr<cv::MinProblemSolver::Function> f(
+        new Fit1dGridProblem(points, grid_size));
+    solver->setFunction(f);
+
+    cv::Mat step(2, 1, CV_64FC1);
+    step.ptr<double>()[0] = 0.1;
+    solver->setInitStep(step);
+
+    cv::Mat x(2, 1, CV_64FC1);
+    x.ptr<double>()[0] = initial;
+    solver->minimize(x);
+
+    return x.ptr<double>()[0];
+  }
+
+  double calc(const double* x) const override {
+    double error = 0;
+    for (double p : points_) {
+      int64_t grid_line_idx =
+          std::min<int64_t>(std::lround(p / x[0]), grid_size_);
+      double offset = p - (grid_line_idx * x[0]);
+      error += offset * offset;
+    }
+    return error;
+  }
+
+  int getDims() const override { return 2; }
+
+ private:
+  Fit1dGridProblem(const std::vector<float>& points, int grid_size)
+      : points_(points), grid_size_(grid_size) {}
+
+  const std::vector<float>& points_;
+  int grid_size_;
+};
+
+/**
  * Fits a 1D grid to the provided values.
  *
  * Returns the spacing between lines of the grid.
  */
-double Fit1dGrid(const std::vector<float>& points, float center_point,
+double Fit1dGrid(const std::vector<float>& points, float center,
                  int grid_size) {
   std::vector<float> centered_points;
   centered_points.reserve(points.size());
   for (float p : points) {
-    centered_points.push_back(std::abs(p - center_point));
+    centered_points.push_back(std::abs(p - center));
   }
 
-  class ErrorFunction : public cv::MinProblemSolver::Function {
-   public:
-    ErrorFunction(const std::vector<float>& points, int grid_size)
-        : points_(points), grid_size_(grid_size) {}
-
-    double calc(const double* x) const override {
-      double error = 0;
-      for (double p : points_) {
-        int64_t grid_line =
-            std::min<int64_t>(std::lround(p / x[0]), grid_size_);
-        error += std::abs(p - (grid_line * x[0]));
-      }
-      return error;
-    }
-
-    int getDims() const override { return 2; }
-
-   private:
-    const std::vector<float>& points_;
-    int grid_size_;
-  };
-
-  cv::Ptr<cv::DownhillSolver> solver = cv::DownhillSolver::create();
-  cv::Ptr<cv::MinProblemSolver::Function> f(
-      new ErrorFunction(centered_points, grid_size / 2));
-  solver->setFunction(f);
-
-  cv::Mat step(2, 1, CV_64FC1);
-  step.ptr<double>()[0] = 0.1;
-  solver->setInitStep(step);
-
-  cv::Mat x(2, 1, CV_64FC1);
-  x.ptr<double>()[0] = (2 * center_point) / static_cast<double>(grid_size);
-  solver->minimize(x);
-
-  return x.ptr<double>()[0];
+  double initial_spacing = (2 * center) / static_cast<double>(grid_size);
+  return Fit1dGridProblem::FindSpacing(centered_points, grid_size / 2,
+                                       initial_spacing);
 }
 
 /**
@@ -399,12 +426,13 @@ double Fit1dGrid(const std::vector<float>& points, float center_point,
  *   * Aligned  - lines are only horizontal and vertical.
  *   * Centered - Tengen is the center pixel.
  */
-std::vector<cv::Point2f> FindGobanGrid(const cv::Mat& im, double pixels_per_mm,
+std::vector<cv::Point2f> FindGobanGrid(absl::string_view debug_name,
+                                       const cv::Mat& im, double pixels_per_mm,
                                        int grid_size) {
   std::vector<float> vertical_line_xs =
-      FindGobanLines(im, pixels_per_mm, Axis::kVertical);
+      FindGobanLines(debug_name, im, pixels_per_mm, Axis::kVertical);
   std::vector<float> horizontal_line_ys =
-      FindGobanLines(im, pixels_per_mm, Axis::kHorizontal);
+      FindGobanLines(debug_name, im, pixels_per_mm, Axis::kHorizontal);
 
   cv::Point2f center = cv::Point2f(im.size().width, im.size().height) / 2;
 
@@ -429,7 +457,10 @@ std::vector<cv::Point2f> FindGobanGrid(const cv::Mat& im, double pixels_per_mm,
  * Returns some calibration intrinsic to the physical Go board.
  */
 absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
-    const cv::Mat& im, const FindGobanOptions& options) {
+    absl::string_view debug_name, const cv::Mat& im,
+    const FindGobanOptions& options) {
+  SAVE_DBG_IM(im, debug_name, "original");
+
   ASSIGN_OR_RETURN(std::vector<DetectedMarker> markers,
                    FindGobanAruCoMarkers(im, options));
 
@@ -447,8 +478,8 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
 
   CV_ASSIGN(cv::Mat, overhead_perspective, cv::warpPerspective, im, xf,
             xf_params.aruco_box_size_px);
-  std::vector<cv::Point2f> grid_corners =
-      FindGobanGrid(overhead_perspective, pixels_per_mm, 19);
+  std::vector<cv::Point2f> grid_corners = FindGobanGrid(
+      debug_name, overhead_perspective, pixels_per_mm, options.grid_size);
 
   return GobanFindingCalibration{
       .options = options,
@@ -458,20 +489,89 @@ absl::StatusOr<GobanFindingCalibration> ComputeGobanFindingCalibration(
   };
 }
 
-absl::StatusOr<std::vector<cv::Point2f>> FindGoban(
-    const cv::Mat& im, const FindGobanOptions& options) {
+absl::StatusOr<BoardState> ReadBoardState(
+    absl::string_view debug_name, const cv::Mat& im,
+    const GobanFindingCalibration& calibration) {
   ASSIGN_OR_RETURN(std::vector<DetectedMarker> markers,
-                   FindGobanAruCoMarkers(im, options));
+                   FindGobanAruCoMarkers(im, calibration.options));
 
-  std::vector<cv::Point2f> goban_aruco_rect;
-  goban_aruco_rect.reserve(4);
-  for (int i = 0; i < 4; i++) {
-    // AruCo corners are returned in clockwise order starting from the top left,
-    // so offset the index by two in order to get the corner that is closest to
-    // the Goban's grid corners.
-    goban_aruco_rect.push_back(markers[i][(i + 2) % 4]);
+  cv::Size2f sz = calibration.aruco_box_size_px;
+  cv::Mat xf = cv::getPerspectiveTransform(
+      AruCoGobanInnerRect(markers),
+      std::vector<cv::Point2f>(
+          {{0, 0}, {sz.width, 0}, {sz.width, sz.height}, {0, sz.height}}));
+
+  CV_ASSIGN_MAT(overhead_board, cv::warpPerspective, im, xf,
+                calibration.aruco_box_size_px);
+
+  double spacing_width =
+      calibration.pixels_per_mm * kGobanLineSpacingMillimeters;
+
+  int morph_width = MakeOdd(std::lround(0.2 * spacing_width));
+  cv::Size morph_size(morph_width, morph_width);
+  cv::Mat morph_kernel =
+      cv::getStructuringElement(cv::MORPH_ELLIPSE, morph_size);
+
+  cv::medianBlur(overhead_board, overhead_board, morph_width);
+  std::vector<cv::Vec3f> circles;
+  cv::HoughCircles(overhead_board, circles, cv::HOUGH_GRADIENT_ALT, 2,
+                   0.8 * spacing_width, 300, 0.75,
+                   std::lround(0.5 * .83 * spacing_width),
+                   std::lround(0.5 * 1.2 * spacing_width));
+
+  {
+    cv::Mat cirlces_im = overhead_board.clone();
+    for (const auto& c : circles) {
+      cv::Point2i center = cv::Point2i(c[0], c[1]);
+      cv::circle(cirlces_im, center, 1, cv::Scalar(0, 100, 100), 3,
+                 cv::LINE_AA);
+      int radius = c[2];
+      cv::circle(cirlces_im, center, radius, cv::Scalar(255, 0, 255), 3,
+                 cv::LINE_AA);
+      SAVE_DBG_IM(cirlces_im, debug_name, "with_circles");
+    }
   }
-  return goban_aruco_rect;
+
+  auto fit_to_grid = [calibration](double pt) {
+    return std::clamp<int32_t>(
+        std::lround(pt * (calibration.options.grid_size - 1)), 0,
+        calibration.options.grid_size - 1);
+  };
+
+  cv::Point2f grid_origin = calibration.grid_corners[0];
+  cv::Point2f grid_x = calibration.grid_corners[1] - grid_origin;
+  cv::Point2f grid_y = calibration.grid_corners[3] - grid_origin;
+  grid_x /= grid_x.ddot(grid_x);
+  grid_y /= grid_y.ddot(grid_y);
+
+  double stone_diameter = 2 * MedianRadius(circles);
+  int filter_size = MakeOdd(std::lround(0.66 * stone_diameter));
+  CV_ASSIGN_MAT(stone_color_im, cv::medianBlur, overhead_board, filter_size);
+  SAVE_DBG_IM(stone_color_im, debug_name, "stone_blur");
+
+  BoardState state;
+  for (const auto& circle : circles) {
+    cv::Point2f center(circle[0], circle[1]);
+    Stone* stone = state.add_stones();
+    stone->mutable_position()->set_column(
+        fit_to_grid((center - grid_origin).ddot(grid_x)));
+    stone->mutable_position()->set_row(
+        fit_to_grid((center - grid_origin).ddot(grid_y)));
+
+    uint8_t color = stone_color_im.at<uint8_t>(center.y, center.x);
+    stone->set_color(color < kStoneColorThresh ? Stone::BLACK : Stone::WHITE);
+  }
+
+  CV_ASSIGN_MAT(inv_xf, cv::invert, xf);
+  CV_ASSIGN(std::vector<cv::Point2f>, goban_corners, cv::perspectiveTransform,
+            calibration.grid_corners, inv_xf);
+  for (const cv::Point2f& corner : goban_corners) {
+    Position2f* pos = state.add_grid_corners();
+    pos->set_x(corner.x);
+    pos->set_y(corner.y);
+  }
+
+  return state;
 }
 
 }  // namespace gobonline
