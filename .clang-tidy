@@ -65,6 +65,8 @@
 #     Despite what the documentation says, this warning appears after
 #     `ASSERT_TRUE(variable)` or `ASSERT_TRUE(variable.has_value())`.
 #
+#  -misc-header-include-cycle: OpenCV has cycles that are not worth fixing.
+#
 #   TODO(#14162): Enable clang-tidy checks. We initially omitted these checks
 #   because they require large cleanup efforts or were blocking the clang-tidy
 #   X update.
@@ -83,6 +85,7 @@ Checks: >
   -google-runtime-references,
   -misc-non-private-member-variables-in-classes,
   -misc-const-correctness,
+  -misc-header-include-cycle,
   -misc-include-cleaner,
   -modernize-return-braced-init-list,
   -modernize-use-trailing-return-type,

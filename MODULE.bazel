@@ -6,6 +6,7 @@ bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
 git_override(
     module_name = "hedron_compile_commands",
     commit = "cd047b3c64fd4574642535a7108d5d998eefa923",
+    # Clayton's version handles protobuf compilation.
     remote = "https://github.com/ClaytonKnittel/bazel-compile-commands-extractor.git",
 )
 
@@ -21,6 +22,6 @@ bazel_dep(name = "rules_python", version = "0.36.0")
 bazel_dep(name = "opencv-bazel")
 git_override(
     module_name = "opencv-bazel",
-    commit = "412b3413c0818a887981d55901075c2cb960b0c6",
+    commit = "3b7e0f50a71b8089b9c20c279c5299e9af812973",
     remote = "https://github.com/jtstogel/opencv-bazel.git",
 )

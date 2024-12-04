@@ -1,8 +1,8 @@
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
-    name = "test_image_files",
-    srcs = glob(["*.jpeg"]) + ["test_images.textproto"],
+    name = "images",
+    srcs = glob(["*.jpeg", "*.jpg"]) + ["test_images.textproto"],
 )
 
 proto_library(

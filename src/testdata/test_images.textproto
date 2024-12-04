@@ -1,18 +1,12 @@
 test_images {
-    file_name: "small_overhead_with_stones.jpeg"
+    file_name: "src/testdata/empty_angled.jpeg"
     goban_rectangle {
-        top_left { row: 135, column: 167 }
-        top_right { row: 138, column: 456 }
-        bottom_right { row: 402, column: 455 }
-        bottom_left { row: 396, column: 160 }
+        top_left { row: 224, column: 155 }
+        top_right { row: 231, column: 371 }
+        bottom_right { row: 391, column: 385 }
+        bottom_left { row: 376, column: 85 }
     }
-    strigified_stones: [
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . B W . . . . . . . . W . . . . .",
-        ". . B . W . . . . . . . . . . B . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . B . .",
+    stringified_stones: [
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
@@ -22,28 +16,28 @@ test_images {
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
-        ". . . W . . . . . . . . . . . W . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . ."
     ]
 }
 
 test_images {
-    file_name: "large_sheer_glare_with_stones.jpeg"
+    file_name: "src/testdata/empty_overhead.jpeg"
     goban_rectangle {
-        top_left { row: 372, column: 601 }
-        top_right { row: 558, column: 1280 }
-        bottom_right { row: 1183, column: 1124 }
-        bottom_left { row: 890, column: 296 }
+        top_left { row: 169, column: 88 }
+        top_right { row: 142, column: 353 }
+        bottom_right { row: 374, column: 407 }
+        bottom_left { row: 425, column: 122 }
     }
-    strigified_stones: [
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . B W . . . . . . . . W . . . . .",
-        ". . B . W . . . . . . . . . . B . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . B . .",
+    stringified_stones: [
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
@@ -53,60 +47,108 @@ test_images {
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
-        ". . . W . . . . . . . . . . . W . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . ."
     ]
 }
 
 test_images {
-    file_name: "small_dim_with_stones.jpeg"
+    file_name: "src/testdata/stones_overhead.jpg"
     goban_rectangle {
-        top_left { row: 171, column: 163 }
-        top_right { row: 159, column: 434 }
-        bottom_right { row: 381, column: 491 }
-        bottom_left { row: 401, column: 147 }
+        top_left { row: 806, column: 302 }
+        top_right { row: 671, column: 930 }
+        bottom_right { row: 1303, column: 1226 }
+        bottom_left { row: 1530, column: 422 }
     }
-    strigified_stones: [
+    stringified_stones: [
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
-        ". . . B W . . . . . . . . W . . . . .",
-        ". . B . W . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . W . W W W .",
+        ". . . W . . . . . . . . . . B B B W .",
+        ". . . . . . . . . . . . B . . . . B .",
+        ". . . . . . . . . . . . . . . . W B .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . B . .",
         ". . . . . . . . . . . . . . . . . . .",
+        ". . B . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
+        ". . . W . . . . . . . . . . . . B . .",
+        ". . . . . W . . . . . . . B . . . . .",
         ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . W . . . . . . . . . . . W . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . .",
-        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . ."
     ]
 }
 
 test_images {
-    file_name: "sheer_blurry_empty.jpeg"
+    file_name: "src/testdata/few_stones_overhead.jpeg"
     goban_rectangle {
-        top_left { row: 364, column: 279 }
-        top_right { row: 250, column: 467 }
-        bottom_right { row: 373, column: 607 }
-        bottom_left { row: 514, column: 400 }
+        top_left { row: 471, column: 362 }
+        top_right { row: 478, column: 1230 }
+        bottom_right { row: 1446, column: 1228 }
+        bottom_left { row: 1436, column: 348 }
     }
+    stringified_stones: [
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . W . . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . B . . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . ."
+    ]
 }
 
 test_images {
-    file_name: "empty_rotated_dim_obstructed_board.jpeg"
+    file_name: "src/testdata/few_stones_glare.jpg"
     goban_rectangle {
-        top_left { row: 607, column: 569 }
-        top_right { row: 411, column: 326 }
-        bottom_right { row: 94, column: 388 }
-        bottom_left { row: 176, column: 712 }
+        top_left { row: 900, column: 287 }
+        top_right { row: 679, column: 807 }
+        bottom_right { row: 1076, column: 1275 }
+        bottom_left { row: 1456, column: 692 }
     }
+    stringified_stones: [
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . W . . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . B . . . . . . . . . . . B . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . .",
+        ". . . . . . . . . . . . . . . . . . ."
+    ]
 }

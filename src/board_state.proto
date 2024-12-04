@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+message Position2f {
+    double x = 1;
+    double y = 2;
+}
+
+message Stone {
+    enum Color {
+        COLOR_UNSPECIFIED = 0;
+        BLACK = 1;
+        WHITE = 2;
+    }
+
+    message Position {
+        int32 row = 1;
+        int32 column = 2;
+    }
+
+    Color color = 1;
+    Position position = 2;
+}
+
+message BoardState {
+    repeated Stone stones = 1;
+
+    // The locations of the Goban's four grid corners in the input image.
+    // Corners are listed clockwise starting from the top left.
+    repeated Position2f grid_corners = 2;
+}

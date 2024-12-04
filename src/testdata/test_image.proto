@@ -14,23 +14,7 @@ message Rectangle {
     Point bottom_left = 4;
 }
 
-message Stone {
-    enum Color {
-        COLOR_UNSPECIFIED = 0;
-        WHITE = 1;
-        BLACK = 2;
-    }
-
-    Color color = 1;
-    
-    // The column of the stone (from left to right).
-    int32 column = 2;
-
-    // The row of the stone (top to bottom).
-    int32 row = 3;
-}
-
-message GobanImage {
+message TestImage {
     string file_name = 1;
 
     // A rectangle outlining the lines of the goban.
@@ -39,9 +23,8 @@ message GobanImage {
     // A string representation of stones on the board.
     //
     // Each entry represents a row of the goban.
-    // Permitted characters are ".", "B" and "W".
+    // Permitted characters are ".", "B" and "W". Whitespace is ignored.
     // Each non-whitespace character represents an intersection.
-    // Whitespace is ignored.
     //
     // This format is convenient for test cases,
     // since it's very easy to grok an ascii image.
@@ -50,18 +33,18 @@ message GobanImage {
     // [
     //   ". . . . . . . . .",
     //   ". . . . . . . . .",
-    //   ". . . B W . . . .",
-    //   ". . B . W . . . .",
+    //   ". . . . W B . . .",
+    //   ". . W . . . . . .",
+    //   ". . . . B . . . .",
     //   ". . . . . . . . .",
-    //   ". . . . . . . . .",
-    //   ". . . . . . . . .",
+    //   ". . . . B . . . .",
     //   ". . . . . . . . .",
     //   ". . . . . . . . .",
     // ]
-    repeated string strigified_stones = 3;
+    repeated string stringified_stones = 3;
 }
 
-// Root message for `test_images.textproto``.
+// Root message describing a set of test images.
 message TestImages {
-    repeated GobanImage test_images = 1;
+    repeated TestImage test_images = 1;
 }
