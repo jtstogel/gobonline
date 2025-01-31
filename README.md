@@ -33,13 +33,13 @@ Original |  Shifted and equalized
 
 Then, for each line direction (horizontal and vertical), we apply a filter and then perform canny edge detection.
 
-Shifted & Equalized |  Filtered | Edges
+Shifted & equalized |  Filtered | Edges
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_equalized.png" height="300" /> | <img src="./assets/stones_overhead_vertical_filter2D.png" height="300" /> | <img src="./assets/stones_overhead_vertical_canny.png" height="300" />
+<img src="./assets/stones_overhead_equalized.png" height="200" /> | <img src="./assets/stones_overhead_vertical_filter2D.png" height="200" /> | <img src="./assets/stones_overhead_vertical_canny.png" height="200" />
 
-Shifted & Equalized |  Filtered | Edges
+Shifted & equalized |  Filtered | Edges
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_equalized.png" height="300" /> | <img src="./assets/stones_overhead_horizontal_filter2D.png" height="300" /> | <img src="./assets/stones_overhead_horizontal_canny.png" height="300" />
+<img src="./assets/stones_overhead_equalized.png" height="200" /> | <img src="./assets/stones_overhead_horizontal_filter2D.png" height="200" /> | <img src="./assets/stones_overhead_horizontal_canny.png" height="200" />
 
 Then we fit a 19x19 2D grid to the detected lines to determine grid dimensions and where the grid lines are relative to the AruCo markers to save those offsets for later.
 
@@ -49,8 +49,8 @@ After calibration, we know exactly where every intersection of the Go board is r
 
 To find the stones, we find AruCo markers, run a series of blurs and morphological operations and blurs, then perform Hough circle detection:
 
-Original | Perspective Shifted | With Hough Circles
+Original | With perspective shift | With Hough Circles
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_original.png" height="300" /> | <img src="./assets/stones_overhead_equalized.png" height="300" /> | <img src="./assets/stones_overhead_with_circles.png" height="300" />
+<img src="./assets/stones_overhead_original.png" height="200" /> | <img src="./assets/stones_overhead_equalized.png" height="200" /> | <img src="./assets/stones_overhead_with_circles.png" height="200" />
 
 We know where every grid intersection is from the [Board calibration](#board-calibration) step, so we just pick the closest grid intersection for each detected circle to find its location, and we use a simple threshold on the color of the circle to determine whether the stone is black or white.
