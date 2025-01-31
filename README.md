@@ -1,11 +1,3 @@
-<style>
-img {
-    height: 300px;
-    display: block;
-    margin: auto;
-}
-</style>
-
 # gobonline
 
 Interface a physical Go board with online servers.
@@ -23,7 +15,9 @@ The CV has two steps: [Board calibration](#board-calibration) and [Stone detecti
 
 Each of the board's corners has an AruCo marker attached to it to help identify the position of the board:
 
-<img src="./assets/stones_overhead.jpg"/>
+<p align="center">
+  <img src="./assets/stones_overhead.jpg" height="300"/>
+</p>
 
 ## Board calibration
 
@@ -35,17 +29,17 @@ We first detect all the AruCo markers, then perform perspective shift and adapti
 
 Original |  Shifted and equalized
 :-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_original.png" /> | <img src="./assets/stones_overhead_equalized.png" />
+<img src="./assets/stones_overhead_original.png"  height="300" /> | <img src="./assets/stones_overhead_equalized.png"  height="300" />
 
 Then, for each line direction (horizontal and vertical), we apply a filter and then perform canny edge detection.
 
 Shifted & Equalized |  Filtered | Edges
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_equalized.png" /> | <img src="./assets/stones_overhead_vertical_filter2D.png" /> | <img src="./assets/stones_overhead_vertical_canny.png" />
+<img src="./assets/stones_overhead_equalized.png" height="300" /> | <img src="./assets/stones_overhead_vertical_filter2D.png" height="300" /> | <img src="./assets/stones_overhead_vertical_canny.png" height="300" />
 
 Shifted & Equalized |  Filtered | Edges
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_equalized.png" /> | <img src="./assets/stones_overhead_horizontal_filter2D.png" /> | <img src="./assets/stones_overhead_horizontal_canny.png" />
+<img src="./assets/stones_overhead_equalized.png" height="300" /> | <img src="./assets/stones_overhead_horizontal_filter2D.png" height="300" /> | <img src="./assets/stones_overhead_horizontal_canny.png" height="300" />
 
 Then we fit a 19x19 2D grid to the detected lines to determine grid dimensions and where the grid lines are relative to the AruCo markers to save those offsets for later.
 
@@ -57,6 +51,6 @@ To find the stones, we find AruCo markers, run a series of blurs and morphologic
 
 Original | Perspective Shifted | With Hough Circles
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="./assets/stones_overhead_original.png" /> | <img src="./assets/stones_overhead_equalized.png" /> | <img src="./assets/stones_overhead_with_circles.png" />
+<img src="./assets/stones_overhead_original.png" height="300" /> | <img src="./assets/stones_overhead_equalized.png" height="300" /> | <img src="./assets/stones_overhead_with_circles.png" height="300" />
 
 We know where every grid intersection is from the [Board calibration](#board-calibration) step, so we just pick the closest grid intersection for each detected circle to find its location, and we use a simple threshold on the color of the circle to determine whether the stone is black or white.
