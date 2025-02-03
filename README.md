@@ -2,16 +2,15 @@
 
 Interface a physical Go board with online servers.
 
-This project involves two components:
+This project involves three components, currently in progress:
 
-- Software that watches a physical Go board over a camera and relays those moves to an online Go game.
-- Hardware that points at laser onto the physical Go board indicating the opponent's next move.
+- [x] Software that watches a physical Go board over a camera
+- [ ] Software that relays moves on the physical board to a live online game (on OGS or Fox).
+- [ ] Hardware that points at laser onto the physical Go board indicating the opponent's next move.
 
-# Vision components
+The software for reading a Go board image has two steps: [Board calibration](#board-calibration) and [Stone detection](#stone-detection).
 
-The CV has two steps: [Board calibration](#board-calibration) and [Stone detection](#stone-detection). It only uses classical computer vision techniques, because that's more fun than ML.
-
-## The setup
+## The physical setup
 
 Each of the board's corners has an AruCo marker attached to it to help identify the position of the board:
 
