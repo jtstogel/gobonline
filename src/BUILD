@@ -38,6 +38,38 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "laser_calibration_solver",
+    srcs = ["laser_calibration_solver.cc"],
+    hdrs = ["laser_calibration_solver.h"],
+    deps = [
+        "//src/util:status",
+        "//src/util:union_find",
+        "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/types:span",
+        "@opencv-bazel//:opencv",
+    ],
+)
+
+cc_test(
+    name = "laser_calibration_solver_test",
+    srcs = [
+        "laser_calibration_solver_test.cc",
+    ],
+    deps = [
+        ":laser_calibration_solver",
+        "//src/util:status_test_utils",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@opencv-bazel//:opencv",
+        "@protobuf",
+    ],
+)
+
 proto_library(
     name = "board_state_proto",
     srcs = ["board_state.proto"],
