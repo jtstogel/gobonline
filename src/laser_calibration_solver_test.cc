@@ -31,7 +31,7 @@ TEST(GobanCVTest, CalibratesWhenNormal) {
   std::cerr << sample.pos.x << "," << sample.pos.y << std::endl;
 
   EXPECT_EQ(sample.pos.x, -150);
-  EXPECT_EQ(sample.pos.y, 214);
+  EXPECT_EQ(sample.pos.y, 914 - 700 + kMirrorDistanceMillimeters);
 }
 
 }  // namespace gobonline
