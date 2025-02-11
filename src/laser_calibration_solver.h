@@ -47,7 +47,7 @@ absl::StatusOr<LaserCalibrationSample> SimulateLaserPath(
     const BoardLocationAndOrientation& board);
 
 absl::StatusOr<BoardLocationAndOrientation> ComputeBoardLocation(
-    absl::Span<LaserCalibrationSample> samples);
+    absl::Span<const LaserCalibrationSample> samples);
 
 }  // namespace gobonline
 
