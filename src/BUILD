@@ -46,9 +46,13 @@ cc_library(
         "//src/util:status",
         "//src/util:union_find",
         "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/random",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/types:span",
+        "@autodiff",
+        "@eigen",
+        "@lbfgspp",
         "@opencv-bazel//:opencv",
     ],
 )
@@ -58,11 +62,13 @@ cc_test(
     srcs = [
         "laser_calibration_solver_test.cc",
     ],
+    copts = ["-I./"],
     deps = [
         ":laser_calibration_solver",
         "//src/util:status_test_utils",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
+        "@eigen",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
         "@opencv-bazel//:opencv",

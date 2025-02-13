@@ -3,7 +3,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/types/span.h"
-#include "opencv2/core/types.hpp"
+#include <Eigen/Core>
 
 namespace gobonline {
 
@@ -22,7 +22,7 @@ struct MirrorAngles {
 
 struct LaserCalibrationSample {
   // A point measured on the board, relative to its center.
-  cv::Point2d pos;
+  Eigen::Vector2d pos;
 
   // The angles that the mirror
   MirrorAngles mirror_angles;
@@ -31,15 +31,15 @@ struct LaserCalibrationSample {
 struct BoardLocationAndOrientation {
   // Position of the board's center,
   // relative to the center of the first mirror.
-  cv::Vec3d center_offset;
+  Eigen::Vector3d center_offset;
 
-  // Direction vector for the x-axis of the board.
-  // Defines the board's plane when taken with board_y_axis.
-  cv::Vec3d x_axis_dir;
+  // Direction vector for the z-axis of the board.
+  // Defines the board's plane when taken with board_x_axis.
+  Eigen::Vector3d normal;
 
   // Direction vector for the y-axis of the board.
   // Defines the board's plane when taken with board_x_axis.
-  cv::Vec3d y_axis_dir;
+  Eigen::Vector3d x_axis;
 };
 
 absl::StatusOr<LaserCalibrationSample> SimulateLaserPath(
