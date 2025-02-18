@@ -30,7 +30,7 @@ template <size_t N>
 VectorXd VecFromArray(const std::array<double, N>& array) {
   VectorXd v(array.size());
   for (size_t i = 0; i < array.size(); i++) {
-    v[i] = array[i];
+    v(i) = array[i];
   }
   return v;
 }
@@ -180,7 +180,7 @@ class BoardLocationSolver {
   static BoardSpecification UnpackBoardParameters(const VectorXd& x) {
     BoardSpecification board;
 
-    board.origin = x.segment(0, 3);
+    board.origin = x.segment<3>(0);
 
     // z_axis and x_axis together represent the orientation of the board.
     // Gram schmidt orthonormalization is performed below to get properly
@@ -188,10 +188,10 @@ class BoardLocationSolver {
     //
     // Consider using a more friendly representation:
     // https://arxiv.org/pdf/2404.11735v1
-    board.z_axis = x.segment(3, 6);
+    board.z_axis = x.segment<3>(3);
     board.z_axis.normalize();
 
-    board.x_axis = x.segment(6, 9);
+    board.x_axis = x.segment<3>(6);
     board.x_axis -= board.x_axis.dot(board.z_axis) * board.z_axis;
     board.x_axis.normalize();
 
