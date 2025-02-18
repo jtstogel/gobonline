@@ -45,15 +45,14 @@ cc_library(
     deps = [
         "//src/util:status",
         "//src/util:union_find",
+        "//src/util/simanneal",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/random",
+        "@abseil-cpp//absl/random:bit_gen_ref",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/types:span",
-        "@autodiff",
         "@eigen",
-        "@lbfgspp",
-        "@opencv-bazel//:opencv",
     ],
 )
 
@@ -66,13 +65,13 @@ cc_test(
     deps = [
         ":laser_calibration_solver",
         "//src/util:status_test_utils",
+        "@abseil-cpp//absl/random",
+        "@abseil-cpp//absl/random:mocking_bit_gen",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@eigen",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@opencv-bazel//:opencv",
-        "@protobuf",
     ],
 )
 
