@@ -5,7 +5,7 @@
  */
 #define RETURN_IF_ERROR(status_expression)   \
   auto TMPVAR(statusor) = status_expression; \
-  if (!TMPVAR(statusor).ok()) return TMPVAR(tmp).status()
+  if (!TMPVAR(statusor).ok()) return TMPVAR(statusor)
 
 /**
  * Assigns the return value of `status_expression` to `decl`,

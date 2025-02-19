@@ -1,4 +1,7 @@
 "Module for interfacing a physical Goban with online Go servers."
+module(name = "gobonline")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Hedron's Compile Commands Extractor for Bazel
 # https://github.com/hedronvision/bazel-compile-commands-extractor
@@ -19,9 +22,46 @@ bazel_dep(name = "protobuf", version = "28.2")
 bazel_dep(name = "re2", version = "2024-07-02")
 bazel_dep(name = "rules_python", version = "0.36.0")
 
+bazel_dep(name = "eigen", version = "3.4.0")  # Not v4 since LBFGSpp requires eigen v3.4.0
+
 bazel_dep(name = "opencv-bazel")
 git_override(
     module_name = "opencv-bazel",
     commit = "3b7e0f50a71b8089b9c20c279c5299e9af812973",
     remote = "https://github.com/jtstogel/opencv-bazel.git",
+)
+
+http_archive(
+    name = "autodiff",
+    url = "https://github.com/autodiff/autodiff/archive/refs/tags/v1.1.2.zip",
+    integrity = "sha256-hz66hIVCDIZmQbCEzm2uQUBKsLQPHfjH8p8Y/xtsQu0=",
+    strip_prefix = "autodiff-1.1.2",
+    build_file_content = """
+cc_library(
+    name = "autodiff",
+    hdrs = glob(["**/*.hpp"]),
+    deps = ["@eigen"],
+    visibility = ["//visibility:public"],
+)
+""",
+    patch_cmds = [
+        "rm BUILD",
+        "rm autodiff/BUILD",
+        "for f in $(find . -name '*.hpp'); do sed -i '/^#include/s/[<>]/\"/g' \"$f\"; done",
+    ],
+)
+
+http_archive(
+    name = "lbfgspp",
+    url = "https://github.com/yixuan/LBFGSpp/archive/refs/tags/v0.3.0.zip",
+    integrity = "sha256-VKbEAdCCMv677H8e++R12vxEDABmwYsLexBmPfTzgac=",
+    strip_prefix = "LBFGSpp-0.3.0/include",
+    build_file_content = """
+cc_library(
+    name = "lbfgspp",
+    hdrs = glob(["**/*.h"]),
+    deps = ["@eigen"],
+    visibility = ["//visibility:public"],
+)
+""",
 )

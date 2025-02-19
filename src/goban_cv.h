@@ -1,3 +1,6 @@
+#ifndef SRC_GOBAN_CV_H
+#define SRC_GOBAN_CV_H
+
 #include <vector>
 
 #include "absl/status/statusor.h"
@@ -64,3 +67,5 @@ absl::StatusOr<BoardState> ReadBoardState(
     const GobanFindingCalibration& calibration);
 
 }  // namespace gobonline
+
+#endif

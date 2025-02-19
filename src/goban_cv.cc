@@ -50,7 +50,7 @@ absl::flat_hash_map<int, DetectedMarker> FindAruCoMarkers(
   detector.detectMarkers(im, marker_corners, marker_ids, rejected_candidates);
 
   absl::flat_hash_map<int, DetectedMarker> markers_by_id;
-  for (int i = 0; i < marker_ids.size(); i++) {
+  for (size_t i = 0; i < marker_ids.size(); i++) {
     markers_by_id[marker_ids[i]] = marker_corners[i];
   }
   return markers_by_id;
@@ -221,7 +221,7 @@ class Line {
   explicit Line(const cv::Vec4f& l) : p1_(l[0], l[1]), p2_(l[2], l[3]) {}
 
   /** Returns the axis this line falls on, if it falls along one. */
-  std::optional<Axis> Axis(double slope_thresh = 0.05) const {
+  std::optional<Axis> GetAxis(double slope_thresh = 0.05) const {
     float dy = std::abs(p1_.y - p2_.y);
     float dx = std::abs(p1_.x - p2_.x);
     if (dy < slope_thresh * dx) {
@@ -276,7 +276,7 @@ std::vector<float> PickAxisAlignedLines(absl::Span<const Line> lines,
   std::vector<float> coordinates;
   coordinates.reserve(lines.size());
   for (const Line& l : lines) {
-    std::optional<Axis> line_axis = l.Axis();
+    std::optional<Axis> line_axis = l.GetAxis();
     if (line_axis.has_value() && *line_axis == axis) {
       cv::Point2f mid = l.Midpoint();
       coordinates.push_back(axis == Axis::kHorizontal ? mid.y : mid.x);

@@ -18,7 +18,7 @@ TEST(UnionFind, Union) {
 
 TEST(UnionFind, TransitiveSetMembership) {
   UnionFind uf(1000);
-  for (int i = 0; i < uf.Size() - 1; i++) {
+  for (size_t i = 0; i < uf.Size() - 1; i++) {
     uf.Union(i, i + 1);
   }
   EXPECT_EQ(uf.FindSet(0), uf.FindSet(999));
