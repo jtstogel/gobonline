@@ -3,10 +3,12 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <limits>
 #include <optional>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -17,6 +19,7 @@
 #include "opencv2/objdetect/aruco_detector.hpp"
 #include "src/board_state.pb.h"
 #include "src/cv_macros.h"
+#include "src/util/simanneal/simanneal.h"
 #include "src/util/status.h"
 #include "src/util/union_find.h"
 
@@ -359,27 +362,26 @@ T clip(const T& n, const T& lower, const T& upper) {
  * Finds the spacing of a 1D grid such that the sum of squared distances from
  * the points to the grid lines is minimized.
  */
-class Fit1dGridProblem : public cv::MinProblemSolver::Function {
+class Fit1dGridProblem {
  public:
-  static double FindSpacing(const std::vector<float>& points, int grid_size,
-                            double initial) {
-    cv::Ptr<cv::DownhillSolver> solver = cv::DownhillSolver::create();
-    cv::Ptr<cv::MinProblemSolver::Function> f(
-        new Fit1dGridProblem(points, grid_size));
-    solver->setFunction(f);
+  static double FindSpacing(const std::vector<double>& points, int grid_size) {
+    using SA = simanneal::SimulatedAnnealingOptimizer</*Dimensions=*/1>;
 
-    cv::Mat step(2, 1, CV_64FC1);
-    step.ptr<double>()[0] = 0.1;
-    solver->setInitStep(step);
+    auto r = std::minmax_element(points.begin(), points.end());
+    SA optimizer(SA::Config{
+        .bounds = {{{*r.first, *r.second - *r.first}}},
+    });
 
-    cv::Mat x(2, 1, CV_64FC1);
-    x.ptr<double>()[0] = initial;
-    solver->minimize(x);
+    Fit1dGridProblem p(points, grid_size);
 
-    return x.ptr<double>()[0];
+    absl::BitGen gen;
+    absl::StatusOr<SA::Result> res = optimizer.Minimize(
+        gen, [&p](const std::array<double, 1>& x) { return p.Error(x); });
+
+    return res->x[0];
   }
 
-  double calc(const double* x) const override {
+  double Error(const std::array<double, 1>& x) const {
     double error = 0;
     for (double p : points_) {
       int64_t grid_line_idx =
@@ -390,13 +392,11 @@ class Fit1dGridProblem : public cv::MinProblemSolver::Function {
     return error;
   }
 
-  int getDims() const override { return 2; }
-
  private:
-  Fit1dGridProblem(const std::vector<float>& points, int grid_size)
+  Fit1dGridProblem(const std::vector<double>& points, int grid_size)
       : points_(points), grid_size_(grid_size) {}
 
-  const std::vector<float>& points_;
+  const std::vector<double>& points_;
   int grid_size_;
 };
 
@@ -407,15 +407,13 @@ class Fit1dGridProblem : public cv::MinProblemSolver::Function {
  */
 double Fit1dGrid(const std::vector<float>& points, float center,
                  int grid_size) {
-  std::vector<float> centered_points;
+  std::vector<double> centered_points;
   centered_points.reserve(points.size());
   for (float p : points) {
     centered_points.push_back(std::abs(p - center));
   }
 
-  double initial_spacing = (2 * center) / static_cast<double>(grid_size);
-  return Fit1dGridProblem::FindSpacing(centered_points, grid_size / 2,
-                                       initial_spacing);
+  return Fit1dGridProblem::FindSpacing(centered_points, grid_size / 2);
 }
 
 /**
