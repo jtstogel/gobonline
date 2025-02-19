@@ -9,4 +9,4 @@ build:opt --copt="-DNDEBUG=1"
 build:opt --linkopt="-Wno-unused-command-line-argument"
 build:opt --features=thin_lto
 
-build:test --copt='-O2'
+build:test --copt='-O3'
