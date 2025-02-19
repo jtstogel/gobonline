@@ -1,8 +1,6 @@
 build --repo_env=CC=clang-18
 build --features=layering_check
 build --cxxopt=-std=c++20
-build --cxxopt="-Wno-deprecated-enum-enum-conversion"
-build --cxxopt="-Wno-missing-requires"
 
 build:opt -c opt
 build:opt --copt="-DNDEBUG=1"

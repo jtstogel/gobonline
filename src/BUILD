@@ -61,7 +61,6 @@ cc_test(
     srcs = [
         "laser_calibration_solver_test.cc",
     ],
-    copts = ["-I./"],
     deps = [
         ":laser_calibration_solver",
         "//src/util:status_test_utils",
