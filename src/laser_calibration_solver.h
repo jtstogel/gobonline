@@ -52,7 +52,7 @@ absl::StatusOr<LaserPositionOnBoard> ComputeLaserPositionOnBoard(
     const MirrorAngles& angles, const BoardLocationAndOrientation& board);
 
 /**
- * Computes the mirror angles required to point the laser at a given board position.
+ * Computes the mirror angles required to point the laser at a board position.
  */
 absl::StatusOr<MirrorAngles> ComputeLaserMirrorAngles(
     absl::BitGenRef gen, const BoardLocationAndOrientation& board,
@@ -67,7 +67,8 @@ struct LaserCalibrationSample {
  * Computes the board's location given a list of measured samples.
  */
 absl::StatusOr<BoardLocationAndOrientation> ComputeBoardLocation(
-    absl::BitGenRef gen, absl::Span<const LaserCalibrationSample> samples, int attempts = 3);
+    absl::BitGenRef gen, absl::Span<const LaserCalibrationSample> samples,
+    int attempts = 3);
 
 }  // namespace gobonline
 
