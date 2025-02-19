@@ -122,7 +122,7 @@ template <size_t N>
 void TestAckley() {
   using SA = SimulatedAnnealingOptimizer<N>;
   std::array<std::array<double, 2>, N> bounds;
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     bounds[i] = {{-32.768, 32.768}};
   }
   SA optimizer({.bounds = bounds});
@@ -135,7 +135,7 @@ void TestAckley() {
 
   std::vector<testing::Matcher<double>> x_matchers;
   x_matchers.reserve(N);
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     x_matchers.push_back(DoubleNear(0., 1e-2));
   }
   EXPECT_THAT(result->x, testing::ElementsAreArray(x_matchers));
@@ -162,7 +162,7 @@ template <size_t N>
 void TestSchwefel() {
   using SA = SimulatedAnnealingOptimizer<N>;
   std::array<std::array<double, 2>, N> bounds;
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     bounds[i] = {{-500, 500}};
   }
   SA optimizer({
@@ -179,7 +179,7 @@ void TestSchwefel() {
 
   std::vector<testing::Matcher<double>> x_matchers;
   x_matchers.reserve(N);
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     x_matchers.push_back(testing::DoubleNear(420.9687, 1e-2));
   }
   EXPECT_THAT(result->x, testing::ElementsAreArray(x_matchers));

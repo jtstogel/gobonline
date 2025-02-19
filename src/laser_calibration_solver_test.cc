@@ -155,8 +155,7 @@ std::optional<BoardLocationAndOrientation> RandomBoardLocation(
   auto pos = [&gen]() {
     return absl::Uniform<double>(gen, -2 * kMmPerFoot, 2 * kMmPerFoot);
   };
-  Eigen::Vector3d board_origin = {pos(), 4 * kMmPerFoot + pos(),
-                                  pos()};
+  Eigen::Vector3d board_origin = {pos(), 4 * kMmPerFoot + pos(), pos()};
 
   // If the board isn't facing the camera enough, discard.
   double angle = std::acos(-board_origin.normalized().dot(z_axis));

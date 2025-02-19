@@ -4,7 +4,9 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <cmath>
+#include <memory>
 #include <numbers>
 #include <vector>
 
@@ -40,11 +42,6 @@ struct VectorLine {
   Vector3d point_on_line;
 };
 
-struct VectorPlane {
-  Vector3d normal;
-  Vector3d point_on_plane;
-};
-
 VectorLine LaserLine(const MirrorAngles& angles) {
   double m1 = angles.first_mirror_angle_radians;
   double m2 = angles.second_mirror_angle_radians;
@@ -66,17 +63,19 @@ VectorLine LaserLine(const MirrorAngles& angles) {
   };
 }
 
-Vector3d LinePlaneIntesection(const VectorLine& line,
-                              const VectorPlane& plane) {
-  double td = line.direction.dot(plane.normal);
+Vector3d LinePlaneIntesection(const Vector3d& line_direction,
+                              const Vector3d& point_on_line,
+                              const Vector3d& plane_normal,
+                              const Vector3d& point_on_plane) {
+  double td = line_direction.dot(plane_normal);
 
   static constexpr double kMinCorrelation = 1e-8;
   if (std::fabs(td) < kMinCorrelation) {
     td = (std::signbit(td) ? -1. : 1.) * kMinCorrelation;
   }
 
-  double t = (plane.point_on_plane - line.point_on_line).dot(plane.normal) / td;
-  return line.point_on_line + t * line.direction;
+  double t = (point_on_plane - point_on_line).dot(plane_normal) / td;
+  return point_on_line + t * line_direction;
 }
 
 /**
@@ -96,11 +95,9 @@ struct BoardSpecification {
  */
 Vector2d SimulateLaserLocationOnBoard(const BoardSpecification& board,
                                       const VectorLine& laser_line) {
-  const VectorPlane board_plane = {
-      .normal = board.z_axis,
-      .point_on_plane = board.origin,
-  };
-  Vector3d intersection = LinePlaneIntesection(laser_line, board_plane);
+  Vector3d intersection =
+      LinePlaneIntesection(laser_line.direction, laser_line.point_on_line,
+                           board.z_axis, board.origin);
 
   Vector3d location_relative_to_board_origin = intersection - board.origin;
   return {
