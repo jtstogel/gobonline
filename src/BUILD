@@ -85,3 +85,14 @@ cc_proto_library(
     name = "board_state_cc_proto",
     deps = [":board_state_proto"],
 )
+
+cc_library(
+    name = "serial_port",
+    srcs = ["serial_port.cc"],
+    hdrs = ["serial_port.h"],
+    deps = [
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+    ],
+)
