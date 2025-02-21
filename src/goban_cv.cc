@@ -572,4 +572,10 @@ absl::StatusOr<BoardState> ReadBoardState(
   return state;
 }
 
+absl::StatusOr<LaserPosition> ReadLaserPosition(
+    absl::string_view debug_name, const cv::Mat& im,
+    const GobanFindingCalibration& calibration) {
+  return absl::UnimplementedError("");
+}
+
 }  // namespace gobonline

@@ -15,6 +15,8 @@ constexpr int kNumSteppers = 2;
 AccelStepper* steppers[kNumSteppers];
 MultiStepper steppers_controller;
 
+constexpr int32_t kMaxStep = 2000;
+
 constexpr int kIdLen = 4;
 
 void setup() {
@@ -43,18 +45,22 @@ struct TextPointer {
  * the provided prefix.
  */
 bool SkipPrefix(const char* prefix, TextPointer* p) {
-  for (int i = 0; (i + p->idx) < p->length; i++) {
-    if (prefix[i] == '\0') {
-      p->idx += i;
-      return true;
-    }
+  int i = 0;
+  int prefix_length = strlen(prefix);
+  int text_length = p->length - p->idx;
 
-    if (p->s[i + p->idx] != prefix[i]) {
+  if (prefix_length > text_length) {
+    return false;
+  }
+
+  for (int i = 0; i < prefix_length; i++) {
+    if (p->s[p->idx + i] != prefix[i]) {
       return false;
     }
   }
 
-  return false;
+  p->idx += prefix_length;
+  return true;
 }
 
 /**
@@ -116,6 +122,12 @@ void GetPositions(int32_t positions[kNumSteppers]) {
 }
 
 void SetPositions(int32_t positions[kNumSteppers]) {
+  for (int i = 0; i< kNumSteppers; i++) {
+    if (positions[i] > kMaxStep) {
+      positions[i] = kMaxStep;
+    }
+  }
+
   steppers_controller.moveTo(positions);
   steppers_controller.runSpeedToPosition();
 }

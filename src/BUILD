@@ -93,6 +93,46 @@ cc_library(
     deps = [
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
+        "//src/util:status",
         "@abseil-cpp//absl/strings",
+    ],
+)
+
+cc_binary(
+    name = "serial_port_main",
+    srcs = ["serial_port_main.cc"],
+    deps = [
+        ":serial_port",
+        "//src/util:status",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/flags:parse",
+    ],
+)
+
+cc_library(
+    name = "arduino_controller",
+    srcs = ["arduino_controller.cc"],
+    hdrs = ["arduino_controller.h"],
+    deps = [
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
+        "//src/util:status",
+        ":serial_port",
+        "@abseil-cpp//absl/strings",
+        "@re2",
+    ],
+)
+
+cc_binary(
+    name = "arduino_controller_main",
+    srcs = ["arduino_controller_main.cc"],
+    deps = [
+        ":serial_port",
+        ":arduino_controller",
+        "//src/util:status",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/flags:parse",
     ],
 )

@@ -140,6 +140,10 @@ TEST_P(GobanCVTest, FindsStones) {
   EXPECT_EQ(expected, actual);
 }
 
+TEST_P(GobanCVTest, FindsLaser) {
+  ::testdata::TestImage test_image = GetParam();
+}
+
 INSTANTIATE_TEST_SUITE_P(
     GobanCVTests, GobanCVTest, ::testing::ValuesIn(LoadTestImages()),
     [](const testing::TestParamInfo<::testdata::TestImage>& info) {

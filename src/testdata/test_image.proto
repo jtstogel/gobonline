@@ -42,6 +42,9 @@ message TestImage {
     //   ". . . . . . . . .",
     // ]
     repeated string stringified_stones = 3;
+
+    // Position of the laser on the board.
+    optional Point laser_position = 4;
 }
 
 // Root message describing a set of test images.
