@@ -20,7 +20,7 @@ class SerialPort {
 
   void Close();
 
-  absl::Status Write(const std::string& data);
+  absl::Status Write(std::string_view data) const;
 
   absl::Status ReadLine(char dst[], size_t size);
 

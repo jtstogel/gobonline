@@ -66,12 +66,12 @@ void SerialPort::Close() {
   }
 }
 
-absl::Status SerialPort::Write(const std::string& data) {
+absl::Status SerialPort::Write(std::string_view data) const {
   if (!open_) {
     return absl::InternalError("SerialPort::Write failed: port is closed");
   }
 
-  size_t n = write(fd_, data.c_str(), data.size());
+  size_t n = write(fd_, data.data(), data.size());
   if (n < data.size()) {
     return absl::InternalError(
         "SerialPort::Write failed: failed to write data");

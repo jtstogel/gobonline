@@ -9,6 +9,8 @@
 
 namespace simanneal {
 
+namespace {
+  
 using SA = SimulatedAnnealingOptimizer<2, double>;
 using ::testing::AllOf;
 using ::testing::AnyOf;
@@ -18,6 +20,10 @@ using ::testing::Ge;
 using ::testing::Le;
 using ::testing::Matcher;
 
+Matcher<double> Between(double lb, double ub) { return AllOf(Ge(lb), Le(ub)); }
+
+}  // namespace
+
 TEST(SimulatedAnnealing, Temperature) {
   double initial_temp = 1000;
   SA::VisitingTemperature t(initial_temp, 2.5);
@@ -25,8 +31,6 @@ TEST(SimulatedAnnealing, Temperature) {
   EXPECT_LT(t(1), t(0));
   EXPECT_NEAR(t(100000), 0., 0.1);
 }
-
-Matcher<double> Between(double lb, double ub) { return AllOf(Ge(lb), Le(ub)); }
 
 TEST(SimulatedAnnealing, AcceptanceProability) {
   SA::VisitingTemperature t(1000., 2.5);

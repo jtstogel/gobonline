@@ -35,8 +35,6 @@ constexpr int64_t kMinWorkingWidthPx = 400;
 constexpr int64_t kMaxWorkingWidthPx = 800;
 constexpr uint8_t kStoneColorThresh = 127;
 
-}  // namespace
-
 absl::flat_hash_map<int, DetectedMarker> FindAruCoMarkers(
     const cv::Mat& im, const AruCoMarkerDesc& desc) {
   std::vector<int> marker_ids;
@@ -451,6 +449,8 @@ std::vector<cv::Point2f> FindGobanGrid(absl::string_view debug_name,
   };
 }
 
+}  // namespace
+
 /**
  * Returns some calibration intrinsic to the physical Go board.
  */
@@ -575,6 +575,9 @@ absl::StatusOr<BoardState> ReadBoardState(
 absl::StatusOr<LaserPosition> ReadLaserPosition(
     absl::string_view debug_name, const cv::Mat& im,
     const GobanFindingCalibration& calibration) {
+  (void)debug_name;
+  (void)im;
+  (void)calibration;
   return absl::UnimplementedError("");
 }
 

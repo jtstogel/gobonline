@@ -41,5 +41,5 @@ jobs:
         bazel run :refresh_compile_commands
         CC_SOURCES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
-        xargs --null clang-tidy-18 < "$CC_SOURCES"
+        xargs --null clang-tidy < "$CC_SOURCES"
         xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"

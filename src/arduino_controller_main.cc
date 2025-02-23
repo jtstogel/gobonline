@@ -8,6 +8,8 @@
 
 ABSL_FLAG(std::string, port, "", "Serial port to open.");
 
+namespace {
+
 using gobonline::ArduinoController;
 using gobonline::SerialPort;
 
@@ -40,6 +42,8 @@ absl::Status Ping() {
 
   return absl::OkStatus();
 }
+
+}  // namespace
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
