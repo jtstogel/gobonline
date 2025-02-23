@@ -1,9 +1,11 @@
 #include "src/laser_calibration_solver.h"
 
 #include <Eigen/Core>
+#include <memory>
 #include <Eigen/Dense>
 #include <cmath>
 #include <optional>
+#include <numbers>
 
 #include "absl/random/random.h"
 #include "gmock/gmock.h"

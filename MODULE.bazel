@@ -65,3 +65,12 @@ cc_library(
 )
 """,
 )
+
+bazel_dep(name = "toolchains_llvm", version = "1.2.0")
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
+llvm.toolchain(
+    llvm_versions = {"": "18.1.8"},
+    cxx_standard = {"": "c++20"},
+)
+use_repo(llvm, "llvm_toolchain")
+register_toolchains("@llvm_toolchain//:all", dev_dependency = True)

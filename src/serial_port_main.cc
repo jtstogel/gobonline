@@ -23,6 +23,8 @@ absl::Status Ping() {
   char buf[256];
   RETURN_IF_ERROR(port->ReadLine(buf, sizeof(buf)));
   std::cout << "recieved: " << buf << std::endl;
+
+  return 0;
 }
 
 int main(int argc, char* argv[]) {
