@@ -24,7 +24,7 @@ absl::Status Ping() {
   RETURN_IF_ERROR(port->ReadLine(buf, sizeof(buf)));
   std::cout << "recieved: " << buf << std::endl;
 
-  return 0;
+  return absl::OkStatus();
 }
 
 int main(int argc, char* argv[]) {
