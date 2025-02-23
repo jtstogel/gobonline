@@ -10,7 +10,7 @@
 namespace simanneal {
 
 namespace {
-  
+
 using SA = SimulatedAnnealingOptimizer<2, double>;
 using ::testing::AllOf;
 using ::testing::AnyOf;

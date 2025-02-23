@@ -16,7 +16,8 @@ class SerialPort {
   ~SerialPort();
   SerialPort(const SerialPort&) = delete;
 
-  static absl::StatusOr<std::unique_ptr<SerialPort>> Open(std::string port_name);
+  static absl::StatusOr<std::unique_ptr<SerialPort>> Open(
+      std::string port_name);
 
   void Close();
 
