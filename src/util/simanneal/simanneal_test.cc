@@ -9,6 +9,8 @@
 
 namespace simanneal {
 
+namespace {
+
 using SA = SimulatedAnnealingOptimizer<2, double>;
 using ::testing::AllOf;
 using ::testing::AnyOf;
@@ -18,6 +20,10 @@ using ::testing::Ge;
 using ::testing::Le;
 using ::testing::Matcher;
 
+Matcher<double> Between(double lb, double ub) { return AllOf(Ge(lb), Le(ub)); }
+
+}  // namespace
+
 TEST(SimulatedAnnealing, Temperature) {
   double initial_temp = 1000;
   SA::VisitingTemperature t(initial_temp, 2.5);
@@ -25,8 +31,6 @@ TEST(SimulatedAnnealing, Temperature) {
   EXPECT_LT(t(1), t(0));
   EXPECT_NEAR(t(100000), 0., 0.1);
 }
-
-Matcher<double> Between(double lb, double ub) { return AllOf(Ge(lb), Le(ub)); }
 
 TEST(SimulatedAnnealing, AcceptanceProability) {
   SA::VisitingTemperature t(1000., 2.5);
@@ -71,9 +75,10 @@ TEST(SimulatedAnnealing, Simple1DMinimize) {
   SA optimizer(config);
 
   absl::BitGen gen;
-  absl::StatusOr<SA::Result> result = optimizer.Minimize(
-      gen,
-      [](const std::array<double, 1>& x) { return std::abs(x[0] * x[0] - 2); });
+  absl::StatusOr<SA::Result> result =
+      optimizer.Minimize(gen, [](const std::array<double, 1>& x) {
+        return std::abs((x[0] * x[0]) - 2);
+      });
 
   ASSERT_TRUE(result.ok()) << result.status().message();
   EXPECT_NEAR(result->x[0] * result->x[0], 2, 1e-2);
@@ -93,13 +98,15 @@ TEST(SimulatedAnnealing, Simple2DWithManyLocalMinima) {
   absl::StatusOr<SA::Result> result =
       optimizer.Minimize(gen, [](const std::array<double, 2>& x) {
         // A bumpy function with lots of local minima.
-        return std::sin(3 * x[0]) * std::sin(3 * x[1]) +
-               0.1 * (x[0] * x[0] + x[1] * x[1]);
+        return (std::sin(3 * x[0]) * std::sin(3 * x[1])) +
+               (0.1 * (x[0] * x[0] + x[1] * x[1]));
       });
 
   ASSERT_TRUE(result.ok()) << result.status().message();
   EXPECT_NEAR(result->error, -.946, 1e-2);
 }
+
+namespace {
 
 template <size_t N>
 double Ackley(const std::array<double, N>& x, double a = 20.0, double b = 0.2,
@@ -141,6 +148,8 @@ void TestAckley() {
   EXPECT_THAT(result->x, testing::ElementsAreArray(x_matchers));
 }
 
+}  // namespace
+
 TEST(SimulatedAnnealing, Ackley2) { TestAckley<2>(); }
 
 TEST(SimulatedAnnealing, Ackley5) { TestAckley<5>(); }
@@ -149,13 +158,15 @@ TEST(SimulatedAnnealing, Ackley10) { TestAckley<10>(); }
 
 TEST(SimulatedAnnealing, Ackley100) { TestAckley<100>(); }
 
+namespace {
+
 template <size_t N>
 double Schwefel(const std::array<double, N>& x) {
   double sum = 0.0;
   for (double xi : x) {
     sum += xi * std::sin(std::sqrt(std::fabs(xi)));
   }
-  return 418.9829 * static_cast<double>(x.size()) - sum;
+  return (418.9829 * static_cast<double>(x.size())) - sum;
 }
 
 template <size_t N>
@@ -185,6 +196,8 @@ void TestSchwefel() {
   EXPECT_THAT(result->x, testing::ElementsAreArray(x_matchers));
 }
 
+}  // namespace
+
 TEST(SimulatedAnnealing, Schwefel2) { TestSchwefel<2>(); }
 
 TEST(SimulatedAnnealing, Schwefel5) { TestSchwefel<5>(); }
@@ -193,12 +206,16 @@ TEST(SimulatedAnnealing, Schwefel10) { TestSchwefel<10>(); }
 
 TEST(SimulatedAnnealing, Schwefel100) { TestSchwefel<100>(); }
 
+namespace {
+
 double Eggholder(const std::array<double, 2> x) {
-  double term1 =
-      -(x[1] + 47.0) * std::sin(std::sqrt(std::fabs(x[0] / 2.0 + x[1] + 47.0)));
+  double term1 = -(x[1] + 47.0) *
+                 std::sin(std::sqrt(std::fabs((x[0] / 2.0) + x[1] + 47.0)));
   double term2 = -x[0] * std::sin(std::sqrt(std::fabs(x[0] - (x[1] + 47.0))));
   return term1 + term2;
 }
+
+}  // namespace
 
 TEST(SimulatedAnnealing, Eggholder) {
   using SA = SimulatedAnnealingOptimizer<2>;

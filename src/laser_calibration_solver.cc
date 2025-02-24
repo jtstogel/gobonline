@@ -289,8 +289,8 @@ class MirrorAnglesSolver {
   }
 
   static constexpr std::array<std::array<double, 2>, kDims> kBounds = {{
-      {1e-2, std::numbers::pi / 2 - 1e-2},
-      {1e-2, std::numbers::pi / 2 - 1e-2},
+      {1e-2, (std::numbers::pi / 2) - 1e-2},
+      {1e-2, (std::numbers::pi / 2) - 1e-2},
   }};
 
   BoardSpecification board_;

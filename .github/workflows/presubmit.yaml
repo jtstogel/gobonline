@@ -14,32 +14,44 @@ jobs:
     name: "Build, Test, and Lint"
 
     steps:
-    - name: Prepare
-      run: |
-        sudo apt-get update -qq
-        curl -fsSL https://apt.llvm.org/llvm.sh | sudo bash /dev/stdin 18
-        sudo apt-get install clang-tidy-18 clang-format-18
-
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Mount Bazel Cache
-      uses: actions/cache@v4
+    - name: Restore bazel cache
+      id: restore-bazel-cache
+      uses: actions/cache/restore@v4
       with:
-        key: ${{ runner.os }}-bazelcache
         path: "/home/runner/.cache/bazel"
+        key: ${{ runner.os }}-bazelcache
 
     - name: Build
       run: bazel build --config=test //...
 
+    - name: Save bazel cache
+      id: save-bazel-cache-post-build
+      uses: actions/cache/save@v4
+      if: steps.restore-bazel-cache.outputs.cache-hit != 'true'
+      with:
+        path: "/home/runner/.cache/bazel"
+        key: ${{ runner.os }}-bazelcache
+
     - name: Test
       run: bazel test --config=test --test_output=errors //...
+
+    - name: Save bazel cache
+      id: save-bazel-cache-post-test
+      uses: actions/cache/save@v4
+      if: steps.restore-bazel-cache.outputs.cache-hit != 'true'
+      with:
+        path: "/home/runner/.cache/bazel"
+        key: ${{ runner.os }}-bazelcache
 
     - name: C++ Lint
       run: |
         bazel run :refresh_compile_commands
         CC_SOURCES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
-        xargs --null clang-tidy-18 < "$CC_SOURCES"
-        xargs --null clang-format-18 --dry-run -Werror -- < "$CC_SOURCES"
+        export PATH="$(pwd)/external/toolchains_llvm++llvm+llvm_toolchain_llvm/bin":$PATH
+        xargs --null clang-tidy < "$CC_SOURCES"
+        xargs --null clang-format --dry-run -Werror -- < "$CC_SOURCES"

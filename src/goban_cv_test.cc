@@ -19,6 +19,8 @@
 
 namespace gobonline {
 
+namespace {
+
 class GobanCVTest : public ::testing::TestWithParam<::testdata::TestImage> {};
 
 std::vector<::testdata::TestImage> LoadTestImages() {
@@ -76,6 +78,8 @@ std::string StringifyStones(const BoardState& state) {
   }
   return absl::StrJoin(rows, "\n");
 }
+
+}  // namespace
 
 TEST_P(GobanCVTest, FindsGobanCorners) {
   ::testdata::TestImage test_image = GetParam();
@@ -138,6 +142,10 @@ TEST_P(GobanCVTest, FindsStones) {
   std::string expected = absl::StrJoin(test_image.stringified_stones(), "\n");
 
   EXPECT_EQ(expected, actual);
+}
+
+TEST_P(GobanCVTest, FindsLaser) {
+  ::testdata::TestImage test_image = GetParam();
 }
 
 INSTANTIATE_TEST_SUITE_P(

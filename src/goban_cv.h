@@ -66,6 +66,21 @@ absl::StatusOr<BoardState> ReadBoardState(
     absl::string_view debug_name, const cv::Mat& im,
     const GobanFindingCalibration& calibration);
 
+struct LaserPosition {
+  /** Position in the x-axis (column direction) from tengen. */
+  double x_mm;
+
+  /** Position in the y-axis (row direction) from tengen. */
+  double y_mm;
+};
+
+/**
+ * Finds the laser position on the board.
+ */
+absl::StatusOr<LaserPosition> ReadLaserPosition(
+    absl::string_view debug_name, const cv::Mat& im,
+    const GobanFindingCalibration& calibration);
+
 }  // namespace gobonline
 
 #endif
