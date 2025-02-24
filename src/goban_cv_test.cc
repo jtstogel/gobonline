@@ -19,6 +19,8 @@
 
 namespace gobonline {
 
+namespace {
+
 class GobanCVTest : public ::testing::TestWithParam<::testdata::TestImage> {};
 
 std::vector<::testdata::TestImage> LoadTestImages() {
@@ -76,6 +78,8 @@ std::string StringifyStones(const BoardState& state) {
   }
   return absl::StrJoin(rows, "\n");
 }
+
+}  // namespace
 
 TEST_P(GobanCVTest, FindsGobanCorners) {
   ::testdata::TestImage test_image = GetParam();

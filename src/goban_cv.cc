@@ -159,7 +159,7 @@ std::vector<double> SideLengths(const std::vector<cv::Point2f>& rect) {
 
 double MaxSideNorm(const std::vector<cv::Point2f>& rect) {
   std::vector<double> lengths = SideLengths(rect);
-  return *std::max_element(lengths.begin(), lengths.end());
+  return *std::ranges::max_element(lengths);
 }
 
 int MakeOdd(int x) { return x | 1; }
@@ -246,7 +246,7 @@ std::vector<float> JoinNearbyValues(std::vector<float>& values,
   // Don't _really_ need a union find for this,
   // but it's a convenient abstraction.
   UnionFind uf(values.size());
-  std::sort(values.begin(), values.end());
+  std::ranges::sort(values);
   for (size_t i = 0; i < values.size() - 1; i++) {
     if (std::abs(values[i] - values[i + 1]) <= max_distance) {
       uf.Union(i, i + 1);
@@ -346,7 +346,7 @@ std::vector<float> FindGobanLines(absl::string_view debug_name,
   // so we join detected lines that are very close together.
   std::vector<float> positions = JoinNearbyValues(
       line_positions, kGobanLineSpacingMillimeters * pixels_per_mm / 4);
-  std::sort(positions.begin(), positions.end());
+  std::ranges::sort(positions);
 
   return positions;
 }
@@ -365,9 +365,9 @@ class Fit1dGridProblem {
   static double FindSpacing(const std::vector<double>& points, int grid_size) {
     using SA = simanneal::SimulatedAnnealingOptimizer</*Dimensions=*/1>;
 
-    auto r = std::minmax_element(points.begin(), points.end());
+    auto r = std::ranges::minmax_element(points);
     SA optimizer(SA::Config{
-        .bounds = {{{*r.first, *r.second - *r.first}}},
+        .bounds = {{{*r.min, *r.max - *r.min}}},
     });
 
     Fit1dGridProblem p(points, grid_size);
