@@ -31,6 +31,7 @@ jobs:
     - name: Save bazel cache
       id: save-bazel-cache-post-build
       uses: actions/cache/save@v4
+      if: steps.restore-bazel-cache.outputs.cache-hit != 'true'
       with:
         path: "/home/runner/.cache/bazel"
         key: ${{ runner.os }}-bazelcache
@@ -41,6 +42,7 @@ jobs:
     - name: Save bazel cache
       id: save-bazel-cache-post-test
       uses: actions/cache/save@v4
+      if: steps.restore-bazel-cache.outputs.cache-hit != 'true'
       with:
         path: "/home/runner/.cache/bazel"
         key: ${{ runner.os }}-bazelcache
