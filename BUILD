@@ -13,6 +13,6 @@ buildifier(
 refresh_compile_commands(
     name = "refresh_compile_commands",
     targets = {
-        "//...": "--process_headers_in_dependencies=false --features=-parse_headers --copt=-isystemexternal/toolchains_llvm~~llvm~llvm_toolchain_llvm/include/c++/v1/ --copt=-isystemexternal/toolchains_llvm~~llvm~llvm_toolchain_llvm/include/x86_64-unknown-linux-gnu/c++/v1/",
+        "//...": "--process_headers_in_dependencies=false --features=-parse_headers --copt=-isystemexternal/toolchains_llvm++llvm+llvm_toolchain_llvm/include/c++/v1/ --copt=-isystemexternal/toolchains_llvm++llvm+llvm_toolchain_llvm/include/x86_64-unknown-linux-gnu/c++/v1/",
     },
 )

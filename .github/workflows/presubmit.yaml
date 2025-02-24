@@ -50,6 +50,6 @@ jobs:
         bazel run :refresh_compile_commands
         CC_SOURCES=$(mktemp)
         find ./src -regextype egrep -regex ".*[.](cc|h)" -print0 > "$CC_SOURCES"
-        export PATH="$(pwd)/external/toolchains_llvm~~llvm~llvm_toolchain_llvm/bin":$PATH
+        export PATH="$(pwd)/external/toolchains_llvm++llvm+llvm_toolchain_llvm/bin":$PATH
         xargs --null clang-tidy < "$CC_SOURCES"
         xargs --null clang-format --dry-run -Werror -- < "$CC_SOURCES"
