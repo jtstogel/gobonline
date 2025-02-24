@@ -102,6 +102,7 @@ std::string IntermediatePath(absl::string_view filename) {
   return absl::StrCat("/tmp/gobonline/debug/", filename);
 }
 
+#ifndef NDEBUG
 #define SAVE_DBG_IM(im, ...)                                               \
   do {                                                                     \
     std::vector<absl::string_view> name_parts = {__VA_ARGS__};             \
@@ -109,6 +110,9 @@ std::string IntermediatePath(absl::string_view filename) {
                     absl::StrCat(absl::StrJoin(name_parts, "_"), ".png")), \
                 im);                                                       \
   } while (false)
+#else
+#define SAVE_DBG_IM(im, ...)
+#endif
 
 enum class Axis { kHorizontal = 0, kVertical = 1 };
 
