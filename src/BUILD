@@ -51,6 +51,7 @@ cc_library(
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/random",
         "@abseil-cpp//absl/random:bit_gen_ref",
+        "@ceres-solver//:ceres",
         "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/types:span",

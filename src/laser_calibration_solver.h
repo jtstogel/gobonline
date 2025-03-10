@@ -3,7 +3,6 @@
 
 #include <Eigen/Core>
 
-#include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
 #include "absl/types/span.h"
 
@@ -31,7 +30,7 @@ struct LaserPositionOnBoard {
   Eigen::Vector2d position;
 };
 
-struct BoardLocationAndOrientation {
+struct LaserGalvoParameterization {
   // Position of the board's center,
   // relative to the center of the first mirror.
   Eigen::Vector3d origin_offset;
@@ -49,13 +48,13 @@ struct BoardLocationAndOrientation {
  * Computes the position of the laser on the board given mirror angles.
  */
 absl::StatusOr<LaserPositionOnBoard> ComputeLaserPositionOnBoard(
-    const MirrorAngles& angles, const BoardLocationAndOrientation& board);
+    const MirrorAngles& angles, const LaserGalvoParameterization& board);
 
 /**
  * Computes the mirror angles required to point the laser at a board position.
  */
 absl::StatusOr<MirrorAngles> ComputeLaserMirrorAngles(
-    absl::BitGenRef gen, const BoardLocationAndOrientation& board,
+    const LaserGalvoParameterization& board,
     const LaserPositionOnBoard& position);
 
 struct LaserCalibrationSample {
@@ -66,9 +65,8 @@ struct LaserCalibrationSample {
 /**
  * Computes the board's location given a list of measured samples.
  */
-absl::StatusOr<BoardLocationAndOrientation> ComputeBoardLocation(
-    absl::BitGenRef gen, absl::Span<const LaserCalibrationSample> samples,
-    int attempts = 3);
+absl::StatusOr<LaserGalvoParameterization> ComputeBoardLocation(
+    absl::Span<const LaserCalibrationSample> samples);
 
 }  // namespace gobonline
 
