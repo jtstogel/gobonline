@@ -136,3 +136,27 @@ cc_binary(
         "@abseil-cpp//absl/flags:parse",
     ],
 )
+
+
+cc_library(
+    name = "stepper_error",
+    srcs = ["stepper_error.cc"],
+    hdrs = ["stepper_error.h"],
+    deps = [
+        "@eigen",
+    ],
+)
+
+cc_test(
+    name = "stepper_error_test",
+    srcs = [
+        "stepper_error_test.cc",
+    ],
+    deps = [
+        ":stepper_error",
+        "//src/util:status_test_utils",
+        "@eigen",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

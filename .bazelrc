@@ -1,8 +1,7 @@
 build --features=layering_check
+build --copt='-O3'
 
 build:opt -c opt
 build:opt --copt="-DNDEBUG=1"
 build:opt --linkopt="-Wno-unused-command-line-argument"
 build:opt --features=thin_lto
-
-build:test --copt='-O3'
