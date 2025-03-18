@@ -2,38 +2,37 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <cmath>
-#include <memory>
-#include <numbers>
-#include <optional>
 
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/util/status_test_utils.h"
 
 namespace gobonline {
 
-TEST(StepperError, NopWhenModelDoesNothing) {
-  StepperError error = {
-      .error_per_step = {0, 0, 0},
-      .period_offset = 0,
-  };
-  StepperErrorModel model(error);
-
-  EXPECT_EQ(model.AddError(1.2), 1.2);
-  EXPECT_EQ(model.RemoveError(1.2), 1.2);
+TEST(DiscreteUniformScalingError, NopWhenModelDoesNothing) {
+  DiscreteUniformScalingError<4, 0., 8.> error({0, 0, 0});
+  EXPECT_DOUBLE_EQ(error.AddError(1.2), 1.2);
+  EXPECT_DOUBLE_EQ(error.RemoveError(1.2), 1.2);
 }
 
-TEST(StepperError, ScalesAngleInErrorInterval) {
-  StepperError error = {
-      .error_per_step = {-.1 * kRadiansPerStep, .1 * kRadiansPerStep, 0},
-      .period_offset = 0,
-  };
-  StepperErrorModel model(error);
+TEST(DiscreteUniformScalingError, ScalesAngleInErrorInterval) {
+  // Even:
+  // |--|--|--|--|
+  //
+  // With error:
+  // |-|----|--|-|
+  DiscreteUniformScalingError<4, 0., 8.> error({-1, 1, 1});
 
-  EXPECT_EQ(model.AddError(kRadiansPerStep), .9 * kRadiansPerStep);
-  EXPECT_EQ(model.AddError(2 * kRadiansPerStep), 2.1 * kRadiansPerStep);
-  EXPECT_EQ(model.AddError(1.5 * kRadiansPerStep), 1.5 * kRadiansPerStep);
+  std::vector<double> with_errors = {0., 0.25, 0.5, 0.75, 1., 2.,
+                                     3., 4.,   5.,  5.5,  6., 6.5,
+                                     7., 7.25, 7.5, 7.75, 8};
+  for (int i = 0; i < with_errors.size(); i++) {
+    double no_error = 0.5 * static_cast<double>(i);
+    double with_error = with_errors[i];
+    EXPECT_DOUBLE_EQ(error.AddError(no_error), with_error)
+        << "no_error=" << no_error;
+    EXPECT_DOUBLE_EQ(error.RemoveError(with_error), no_error)
+        << "no_error=" << no_error;
+  }
 }
 
 }  // namespace gobonline
