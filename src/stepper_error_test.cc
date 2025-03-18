@@ -8,19 +8,19 @@
 
 namespace gobonline {
 
-TEST(DiscreteUniformScalingError, NopWhenModelDoesNothing) {
-  DiscreteUniformScalingError<4, 0., 8.> error({0, 0, 0});
+TEST(DiscreteUniformIntervalsError, NopWhenModelDoesNothing) {
+  DiscreteUniformIntervalsError<4, 0., 8.> error({0, 0, 0});
   EXPECT_DOUBLE_EQ(error.AddError(1.2), 1.2);
   EXPECT_DOUBLE_EQ(error.RemoveError(1.2), 1.2);
 }
 
-TEST(DiscreteUniformScalingError, ScalesAngleInErrorInterval) {
+TEST(DiscreteUniformIntervalsError, ScalesAngleInErrorInterval) {
   // Even:
   // |--|--|--|--|
   //
   // With error:
   // |-|----|--|-|
-  DiscreteUniformScalingError<4, 0., 8.> error({-1, 1, 1});
+  DiscreteUniformIntervalsError<4, 0., 8.> error({-1, 1, 1});
 
   std::vector<double> with_errors = {0., 0.25, 0.5, 0.75, 1., 2.,
                                      3., 4.,   5.,  5.5,  6., 6.5,

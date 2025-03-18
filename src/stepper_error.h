@@ -50,9 +50,9 @@ struct StepperError {
 };
 
 template <size_t N, double Min = 0., double Max = 1.>
-class DiscreteUniformScalingError {
+class DiscreteUniformIntervalsError {
  public:
-  explicit DiscreteUniformScalingError(
+  explicit DiscreteUniformIntervalsError(
       const std::array<double, N - 1>& errors) {
     errors_ = ComputeCumulativeOffsets(errors);
 
