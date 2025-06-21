@@ -23,6 +23,7 @@ bazel_dep(name = "re2", version = "2024-07-02")
 bazel_dep(name = "rules_python", version = "0.36.0")
 
 bazel_dep(name = "eigen", version = "3.4.0")  # Not v4 since LBFGSpp requires eigen v3.4.0
+bazel_dep(name = "ceres-solver", version = "2.2.0")
 
 bazel_dep(name = "opencv-bazel")
 git_override(

@@ -1,11 +1,15 @@
 #include "src/laser_calibration_solver.h"
 
+#include <ceres/ceres.h>
+#include <ceres/rotation.h>
+
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
 #include <array>
 #include <cassert>
-#include <chrono>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <numbers>
 #include <vector>
@@ -20,13 +24,11 @@ namespace gobonline {
 
 namespace {
 
+using Eigen::Matrix3;
 using Eigen::Vector2d;
+using Eigen::Vector3;
 using Eigen::Vector3d;
 using Eigen::VectorXd;
-
-// The maximum allowable distance between the
-// laser's projection and the desired spot on the board.
-constexpr double kMaxLaserErrorMm = 4.;
 
 template <size_t N>
 VectorXd VecFromArray(const std::array<double, N>& array) {
@@ -39,7 +41,7 @@ VectorXd VecFromArray(const std::array<double, N>& array) {
 
 struct VectorLine {
   Vector3d direction;
-  Vector3d point_on_line;
+  Vector3d origin;
 };
 
 VectorLine LaserLine(const MirrorAngles& angles) {
@@ -59,7 +61,7 @@ VectorLine LaserLine(const MirrorAngles& angles) {
   };
   return {
       .direction = laser_dir,
-      .point_on_line = laser_offset,
+      .origin = laser_offset,
   };
 }
 
@@ -78,48 +80,166 @@ Vector3d LinePlaneIntesection(const Vector3d& line_direction,
   return point_on_line + t * line_direction;
 }
 
-/**
- * An overly specified board location and orientation.
- * Used to avoid recomputing values twice.
- */
-struct BoardSpecification {
-  Vector3d origin;
-  Vector3d x_axis;
-  Vector3d y_axis;
-  Vector3d z_axis;
+template <typename T, int N, int M>
+Eigen::Matrix<T, N, M> ConvertMatrixT(const Eigen::Matrix<double, N, M>& m) {
+  Eigen::Matrix<T, N, M> result;
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < M; j++) {
+      result(i, j) = T(m(i, j));
+    }
+  }
+  return result;
+}
+
+template <typename T>
+Vector3<T> ConvertVector3(const Vector3<double>& m) {
+  return ConvertMatrixT<T, 3, 1>(m);
+}
+
+template <typename T>
+Matrix3<T> ConvertMatrix3(const Matrix3<double>& m) {
+  return ConvertMatrixT<T, 3, 3>(m);
+}
+
+class BoardLocationProblem {
+ private:
+  template <typename T>
+  struct Sample {
+    Vector3<T> laser_direction;
+    Vector3<T> laser_origin;
+
+    // The laser interesection in board space (the z-component is set to 0).
+    Vector3<T> laser_intersection_in_board_space;
+  };
+
+ public:
+  explicit BoardLocationProblem(
+      absl::Span<const LaserCalibrationSample> samples) {
+    for (const LaserCalibrationSample& s : samples) {
+      VectorLine laser = LaserLine(s.mirror_angles);
+      Vector3d pos(s.position.position[0], s.position.position[1], 0);
+      samples_.push_back(Sample<double>{
+          .laser_direction = laser.direction,
+          .laser_origin = laser.origin,
+          .laser_intersection_in_board_space = pos,
+      });
+    }
+  }
+
+  template <typename T>
+  T Error(const Eigen::VectorX<T>& x) {
+    return Residuals<T>(x).squaredNorm() / samples_.size();
+  }
+
+  template <typename T>
+  bool operator()(const T* const* x, T* residuals) const {
+    Eigen::VectorX<T> x_vec(3);
+    for (int i = 0; i < 3; i++) {
+      x_vec[i] = x[0][i];
+    }
+    Eigen::VectorX<T> r = Residuals(x_vec);
+    for (int i = 0; i < r.size(); i++) {
+      residuals[i] = r(i);
+    }
+    return residuals;
+  }
+
+  template <typename T>
+  Eigen::VectorX<T> Residuals(const Eigen::VectorX<T>& x) const {
+    Vector3<T> origin;
+    Eigen::Matrix3<T> rotation;
+    return Residuals(x, origin, rotation);
+  }
+
+  LaserGalvoParameterization Unpack(const VectorXd& x) const {
+    Eigen::Vector3d origin;
+    Eigen::Matrix3d rotation;
+    (void)Residuals(x, origin, rotation);
+    return {
+        .origin_offset = origin,
+        .x_axis = rotation * Vector3d::UnitX(),
+        .y_axis = rotation * Vector3d::UnitY(),
+    };
+  }
+
+ private:
+  template <typename T>
+  Eigen::VectorX<T> Residuals(const Eigen::VectorX<T>& x, Vector3<T>& origin,
+                              Matrix3<T>& rotation) const {
+    rotation = Eigen::AngleAxis<T>(x(2), Vector3<T>::UnitZ()) *
+               Eigen::AngleAxis<T>(x(1), Vector3<T>::UnitY()) *
+               Eigen::AngleAxis<T>(x(0), Vector3<T>::UnitX());
+    Vector3<T> normal = rotation * Vector3<T>::UnitZ();
+
+    // The origin of the board can be directly solved for.
+    std::vector<Matrix3<T>> projections;
+    {
+      Vector3<T> projected_origin = Vector3<T>::Zero();
+      Matrix3<T> projections_sum = Eigen::Matrix3<T>::Zero();
+      for (const Sample<double>& sample : samples_) {
+        Sample<T> s = CastSample<T>(sample);
+
+        Matrix3<T> projection =
+            Matrix3<T>::Identity() - (s.laser_direction * normal.transpose() /
+                                      s.laser_direction.dot(normal));
+        projections.push_back(projection);
+        projections_sum += projection.transpose() * projection;
+
+        projected_origin += projection.transpose() *
+                            (projection * s.laser_origin -
+                             rotation * s.laser_intersection_in_board_space);
+      }
+      origin = projections_sum.inverse() * projected_origin;
+    }
+
+    if (origin[1] < 0.) {
+      rotation = T(-1) * rotation;
+      normal = T(-1) * normal;
+      origin = T(-1) * origin;
+    }
+
+    Eigen::VectorX<T> residuals(3 * samples_.size());
+    for (int i = 0; i < samples_.size(); i++) {
+      Sample<T> s = CastSample<T>(samples_[i]);
+      Vector3<T> residual = (projections[i] * (origin - s.laser_origin)) +
+                            (rotation * s.laser_intersection_in_board_space);
+      for (int j = 0; j < 3; j++) {
+        residuals((3 * i) + j) = residual(j);
+      }
+    }
+    return residuals;
+  }
+
+  template <typename T>
+  Sample<T> CastSample(const Sample<double>& s) const {
+    return Sample<T>{
+        .laser_direction = ConvertVector3<T>(s.laser_direction),
+        .laser_origin = ConvertVector3<T>(s.laser_origin),
+        .laser_intersection_in_board_space =
+            ConvertVector3<T>(s.laser_intersection_in_board_space),
+    };
+  }
+
+  std::vector<Sample<double>> samples_;
 };
 
-/**
- * Simulates the projection of a laser onto the plane of the board.
- * Returns the laser's 2D coordinates in terms of the board's origin.
- */
-Vector2d SimulateLaserLocationOnBoard(const BoardSpecification& board,
-                                      const VectorLine& laser_line) {
-  Vector3d intersection =
-      LinePlaneIntesection(laser_line.direction, laser_line.point_on_line,
-                           board.z_axis, board.origin);
-
-  Vector3d location_relative_to_board_origin = intersection - board.origin;
-  return {
-      location_relative_to_board_origin.dot(board.x_axis),
-      location_relative_to_board_origin.dot(board.y_axis),
-  };
+Vector3d AverageLaserDirection(
+    absl::Span<const LaserCalibrationSample> samples) {
+  Vector3d avg_laser_direction = Vector3d::Zero();
+  for (const LaserCalibrationSample& s : samples) {
+    avg_laser_direction += LaserLine(s.mirror_angles).direction;
+  }
+  return avg_laser_direction.normalized();
 }
 
 class BoardLocationSolver {
  private:
-  // A version of LaserCalibrationSample with some precomputation done.
-  struct Sample {
-    LaserPositionOnBoard position_on_board;
-    VectorLine laser_line;
-  };
-
-  static constexpr size_t kDims = 9;
+  static constexpr size_t kDims = 3;
 
  public:
-  static absl::StatusOr<BoardLocationAndOrientation> Solve(
+  static absl::StatusOr<LaserGalvoParameterization> SolveSimulatedAnnealing(
       absl::BitGenRef gen, absl::Span<const LaserCalibrationSample> samples) {
-    BoardLocationSolver problem(samples);
+    BoardLocationProblem problem(samples);
 
     using Optimizer = simanneal::SimulatedAnnealingOptimizer<kDims>;
     Optimizer optimizer(Optimizer::Config{
@@ -130,96 +250,92 @@ class BoardLocationSolver {
 
     ASSIGN_OR_RETURN(
         Optimizer::Result result,
-        optimizer.Minimize(gen, [&problem](const std::array<double, kDims>& x) {
-          return problem.Error(x);
-        }));
+        optimizer.Minimize(gen,
+                           [p = &problem](const std::array<double, kDims>& x) {
+                             return p->Error(VecFromArray(x));
+                           }));
 
-    if (result.error > std::pow(kMaxLaserErrorMm, 2)) {
-      return absl::InternalError(absl::StrCat(
-          "Failed to find a good board location, error=", result.error,
-          " is greater than limit=", std::pow(kMaxLaserErrorMm, 2)));
+    return problem.Unpack(VecFromArray(result.x));
+  }
+
+  static absl::StatusOr<LaserGalvoParameterization> SolveCeres(
+      absl::Span<const LaserCalibrationSample> samples) {
+    struct SolutionWithError {
+      LaserGalvoParameterization board;
+      double error;
+    };
+    BoardLocationProblem board_problem(samples);
+
+    /**
+     * Populate initial_guesses with Euler-angle representations
+     * of the board's orientation. Our intial guess is a board that
+     * is directly facing the average laser direction, with some
+     * rotation about the board's normal.
+     *
+     * The function we're optimizing is fairly non-linear,
+     * but one of these solutions should be close enough
+     * to any physical situation to where most iteratives solvers
+     * could perform well here.
+     */
+    constexpr int kGridSize = 16;
+    std::array<std::array<double, 3>, kGridSize> initial_guesses;
+    {
+      Vector3d board_normal = -AverageLaserDirection(samples);
+      Eigen::Quaterniond q = Eigen::Quaterniond::FromTwoVectors(
+          Eigen::Vector3d::UnitZ(), board_normal);
+      for (int i = 0; i < kGridSize; i++) {
+        double theta = 2 * std::numbers::pi * static_cast<double>(i) /
+                       static_cast<double>(kGridSize);
+        Eigen::AngleAxisd rotation_about_normal(theta, board_normal);
+        Eigen::Matrix3d r =
+            rotation_about_normal.toRotationMatrix() * q.toRotationMatrix();
+        Vector3d x = r.eulerAngles(2, 1, 0);
+        for (int j = 0; j < 3; j++) {
+          initial_guesses[i][2 - j] = x[j];
+        }
+      }
     }
 
-    BoardSpecification board = UnpackBoardParameters(VecFromArray(result.x));
-    return BoardLocationAndOrientation{
-        .origin_offset = board.origin,
-        .x_axis = board.x_axis,
-        .y_axis = board.y_axis,
-    };
+    SolutionWithError best = {.error = std::numeric_limits<double>::max()};
+    for (std::array<double, 3>& x : initial_guesses) {
+      auto* cost_fun =
+          new ceres::DynamicAutoDiffCostFunction<BoardLocationProblem>(
+              new BoardLocationProblem(board_problem));
+      cost_fun->AddParameterBlock(3);
+      cost_fun->SetNumResiduals(3 * samples.size());
+
+      ceres::Problem problem;
+      problem.AddParameterBlock(x.data(), 3);
+      problem.AddResidualBlock(cost_fun, new ceres::HuberLoss(1.), x.data());
+
+      ceres::Solver::Options options;
+      options.minimizer_type = ceres::MinimizerType::TRUST_REGION;
+      options.linear_solver_type = ceres::LinearSolverType::DENSE_QR;
+      options.max_num_iterations = 1000;
+      options.function_tolerance = 1e-10;
+      options.parameter_tolerance = 1e-10;
+      options.gradient_tolerance = 1e-10;
+
+      ceres::Solver::Summary summary;
+      ceres::Solve(options, &problem, &summary);
+      if (summary.IsSolutionUsable() && summary.final_cost < best.error) {
+        best = SolutionWithError{
+            .board = board_problem.Unpack(VecFromArray(x)),
+            .error = summary.final_cost,
+        };
+      }
+    }
+
+    return best.board;
   }
 
  private:
-  explicit BoardLocationSolver(
-      absl::Span<const LaserCalibrationSample> samples) {
-    for (const LaserCalibrationSample& s : samples) {
-      samples_.push_back(Sample{
-          .position_on_board = s.position,
-          .laser_line = LaserLine(s.mirror_angles),
-      });
-    }
-  }
-
-  double Error(const std::array<double, kDims>& x_array) {
-    VectorXd v = VecFromArray(x_array);
-
-    BoardSpecification board = UnpackBoardParameters(v);
-
-    double error = 0.;
-    for (const Sample& s : samples_) {
-      Vector2d computed_location =
-          SimulateLaserLocationOnBoard(board, s.laser_line);
-      error += (computed_location - s.position_on_board.position).squaredNorm();
-    }
-
-    return error / samples_.size();
-  }
-
-  static BoardSpecification UnpackBoardParameters(const VectorXd& x) {
-    BoardSpecification board;
-
-    board.origin = x.segment<3>(0);
-
-    // z_axis and x_axis together represent the orientation of the board.
-    // Gram schmidt orthonormalization is performed below to get properly
-    // aligned axes from the unconstrained variables in `x`.
-    //
-    // Consider using a more friendly representation:
-    // https://arxiv.org/pdf/2404.11735v1
-    board.z_axis = x.segment<3>(3);
-    board.z_axis.normalize();
-
-    board.x_axis = x.segment<3>(6);
-    board.x_axis -= board.x_axis.dot(board.z_axis) * board.z_axis;
-    board.x_axis.normalize();
-
-    board.y_axis = board.z_axis.cross(board.x_axis);
-
-    return board;
-  }
-
   static constexpr std::array<std::array<double, 2>, kDims> kBounds = {{
-      // Bounds for the position of the board.
-      // The y-position is strictly positive,
-      // since the board must be in front of the camera.
-      {-5 * kMmPerFoot, 5 * kMmPerFoot},
-      {1. * kMmPerFoot, 10 * kMmPerFoot},
-      {-5 * kMmPerFoot, 5 * kMmPerFoot},
-
-      // Bounds for the board's z-axis (the axis normal to its plane).
-      // The y-coordinate is strictly negative,
-      // since the board must be facing the camera.
-      {-1., 1.},
-      {-1., -1e-4},
-      {-1., 1.},
-
-      // Bounds for the board's x-axis.
-      {-1., 1.},
-      {-1., 1.},
-      {-1., 1.},
+      {0., 2 * std::numbers::pi},
+      {0., 2 * std::numbers::pi},
+      {0., 2 * std::numbers::pi},
   }};
-
-  std::vector<Sample> samples_;
-};
+};  // namespace
 
 absl::Status CheckMirrorAngleBounds(double angle_radians) {
   if (angle_radians <= 0 || angle_radians >= std::numbers::pi / 2) {
@@ -230,110 +346,78 @@ absl::Status CheckMirrorAngleBounds(double angle_radians) {
 }
 
 class MirrorAnglesSolver {
- private:
-  static constexpr size_t kDims = 2;
-
  public:
   static absl::StatusOr<MirrorAngles> Solve(
-      absl::BitGenRef gen, const BoardLocationAndOrientation& board,
+      const LaserGalvoParameterization& board,
       const LaserPositionOnBoard& position) {
-    MirrorAnglesSolver problem(board, position);
+    constexpr double kPi = std::numbers::pi;
+    constexpr double kEps = 1e-8;
+    auto atan2 = [](double x, double y) {
+      return std::fmod(kPi + std::atan2(x, y), kPi);
+    };
 
-    using Optimizer = simanneal::SimulatedAnnealingOptimizer<kDims>;
-    Optimizer optimizer(Optimizer::Config{
-        .bounds = kBounds,
-        .initial_temperature = 50000,
-        .max_iterations = 20000,
-    });
+    Vector3d q = board.origin_offset + board.x_axis * position.position[0] +
+                 board.y_axis * position.position[1];
 
-    ASSIGN_OR_RETURN(
-        Optimizer::Result result,
-        optimizer.Minimize(gen, [&problem](const std::array<double, kDims>& x) {
-          return problem.Error(x);
-        }));
+    constexpr double kH = kMirrorDistanceMillimeters;
+    MirrorAngles m = {
+        .first_mirror_angle_radians = .5 * std::acos(q(0) / q.norm()),
+        .second_mirror_angle_radians = .5 * atan2(q(1), kH - q(2)),
+    };
 
-    if (result.error > 1e-2) {
-      return absl::InternalError(absl::StrCat(
-          "Failed to find good mirror angles, error=", result.error,
-          " is greater than limit=1e-2"));
+    int max_iterations = 10;
+    while (--max_iterations) {
+      MirrorAngles prev = m;
+
+      m.second_mirror_angle_radians = .5 * atan2(q(1), kH - q(2));
+      m.first_mirror_angle_radians =
+          .5 * atan2(kH + (q(1) / std::sin(2. * m.second_mirror_angle_radians)),
+                     q(0));
+
+      if (std::fabs(prev.first_mirror_angle_radians -
+                    m.first_mirror_angle_radians) < kEps &&
+          std::fabs(prev.second_mirror_angle_radians -
+                    m.second_mirror_angle_radians) < kEps) {
+        return m;
+      }
     }
-
-    return UnpackMirrorAngles(result.x);
+    return absl::InvalidArgumentError(
+        "Failed to find valid mirror angles within 100 iterations");
   }
-
- private:
-  explicit MirrorAnglesSolver(const BoardLocationAndOrientation& board,
-                              const LaserPositionOnBoard& position)
-      : position_(position) {
-    board_ = {
-        .origin = board.origin_offset,
-        .x_axis = board.x_axis,
-        .y_axis = board.y_axis,
-        .z_axis = board.x_axis.cross(board.y_axis),
-    };
-  }
-
-  double Error(const std::array<double, kDims>& x) {
-    MirrorAngles angles = UnpackMirrorAngles(x);
-
-    Vector2d computed_location =
-        SimulateLaserLocationOnBoard(board_, LaserLine(angles));
-    return (computed_location - position_.position).squaredNorm();
-  }
-
-  static MirrorAngles UnpackMirrorAngles(const std::array<double, kDims>& x) {
-    return {
-        .first_mirror_angle_radians = x[0],
-        .second_mirror_angle_radians = x[1],
-    };
-  }
-
-  static constexpr std::array<std::array<double, 2>, kDims> kBounds = {{
-      {1e-2, (std::numbers::pi / 2) - 1e-2},
-      {1e-2, (std::numbers::pi / 2) - 1e-2},
-  }};
-
-  BoardSpecification board_;
-  const LaserPositionOnBoard& position_;
 };
 
 };  // namespace
 
 absl::StatusOr<LaserPositionOnBoard> ComputeLaserPositionOnBoard(
-    const MirrorAngles& angles, const BoardLocationAndOrientation& board) {
+    const MirrorAngles& angles, const LaserGalvoParameterization& board) {
   RETURN_IF_ERROR(CheckMirrorAngleBounds(angles.first_mirror_angle_radians));
   RETURN_IF_ERROR(CheckMirrorAngleBounds(angles.second_mirror_angle_radians));
 
-  BoardSpecification board_spec = {
-      .origin = board.origin_offset,
-      .x_axis = board.x_axis,
-      .y_axis = board.y_axis,
-      .z_axis = board.x_axis.cross(board.y_axis),
-  };
+  Vector3d normal = board.x_axis.cross(board.y_axis);
   VectorLine laser_line = LaserLine(angles);
+  Vector3d intersection = LinePlaneIntesection(
+      laser_line.direction, laser_line.origin, normal, board.origin_offset);
+
+  Vector3d location_relative_to_board_origin =
+      intersection - board.origin_offset;
   return LaserPositionOnBoard{
-      .position = SimulateLaserLocationOnBoard(board_spec, laser_line),
+      .position =
+          {
+              location_relative_to_board_origin.dot(board.x_axis),
+              location_relative_to_board_origin.dot(board.y_axis),
+          },
   };
 }
 
 absl::StatusOr<MirrorAngles> ComputeLaserMirrorAngles(
-    absl::BitGenRef gen, const BoardLocationAndOrientation& board,
+    const LaserGalvoParameterization& board,
     const LaserPositionOnBoard& position) {
-  return MirrorAnglesSolver::Solve(gen, board, position);
+  return MirrorAnglesSolver::Solve(board, position);
 }
 
-absl::StatusOr<BoardLocationAndOrientation> ComputeBoardLocation(
-    absl::BitGenRef gen, absl::Span<const LaserCalibrationSample> samples,
-    int attempts) {
-  while (true) {
-    absl::StatusOr<BoardLocationAndOrientation> result =
-        BoardLocationSolver::Solve(gen, samples);
-    attempts--;
-    if (!result.ok() && attempts > 0) {
-      continue;
-    }
-    return result;
-  }
+absl::StatusOr<LaserGalvoParameterization> ComputeBoardLocation(
+    absl::Span<const LaserCalibrationSample> samples) {
+  return BoardLocationSolver::SolveCeres(samples);
 }
 
 }  // namespace gobonline
